@@ -92,9 +92,9 @@ export function BountyCard({
   const isFcfsClaimed =
     bounty.type === "FIXED_PRICE" && normalizedStatus === "IN_PROGRESS";
   const isCompetition = bounty.type === "COMPETITION";
-  // claimCount: use backend claimCount when available, fall back to _count.submissions
-  const slotCount = bounty.claimCount ?? bounty._count?.submissions ?? 0;
-  const maxParticipants = bounty.maxParticipants ?? null;
+  // claimCount and maxParticipants are pending backend schema fields; use safe fallbacks.
+  const slotCount = bounty._count?.submissions ?? 0;
+  const maxParticipants = null;
   const timeLeft = bounty.updatedAt
     ? formatDistanceToNow(new Date(bounty.updatedAt), { addSuffix: true })
     : "N/A";

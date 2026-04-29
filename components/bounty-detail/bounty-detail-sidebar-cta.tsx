@@ -10,6 +10,7 @@ import {
   Loader2,
   Users,
   Clock,
+  Gavel,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -34,6 +35,7 @@ import { authClient } from "@/lib/auth-client";
 import { useCompetitionJoinState } from "@/hooks/use-competition-join-state";
 import type { CancellationRecord } from "@/types/escrow";
 import { useCancelBountyDialog } from "@/hooks/use-cancel-bounty-dialog";
+import { useCanRaiseDispute } from "@/hooks/use-can-raise-dispute";
 import type { Bounty } from "@/types/bounty";
 import {
   ApplicationDialog,
@@ -69,28 +71,21 @@ export function SidebarCTA({ bounty, onCancelled }: SidebarCTAProps) {
   const isCompetition = bounty.type === "COMPETITION";
   const isCreator =
     (session?.user as { id?: string } | undefined)?.id === bounty.createdBy;
+
+  const canRaiseDispute = useCanRaiseDispute(bounty);
+
   const canCancel =
     isCreator && (bounty.status === "OPEN" || bounty.status === "IN_PROGRESS");
 
-  // claimCount: use backend claimCount when available, fall back to _count.submissions
-  const claimCount = bounty.claimCount ?? bounty._count?.submissions ?? 0;
-  const maxParticipants = bounty.maxParticipants ?? null;
+  // Fall back to _count.submissions until backend adds claimCount / maxParticipants
+  const claimCount = bounty._count?.submissions ?? 0;
+  const maxParticipants: number | null = null;
   const deadline = bounty.bountyWindow?.endDate ?? null;
   const isFinalized = bounty.status === "COMPLETED";
   const submissionCount = bounty._count?.submissions ?? 0;
 
   const { walletAddress, hasJoined, isPastDeadline, joinMutation, handleJoin } =
     useCompetitionJoinState(bounty);
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // clipboard write failed
-    }
-  };
 
   const { mutateAsync: applyToBounty } = useApplyToBounty();
 
@@ -101,6 +96,16 @@ export function SidebarCTA({ bounty, onCancelled }: SidebarCTAProps) {
       applicantAddress: walletAddress,
       proposal: JSON.stringify(values),
     });
+  };
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // clipboard write failed
+    }
   };
 
   const ctaLabel = () => {
@@ -265,6 +270,21 @@ export function SidebarCTA({ bounty, onCancelled }: SidebarCTAProps) {
           </p>
         )}
 
+        {/* Raise Dispute */}
+        {canRaiseDispute && (
+          <>
+            <Separator className="bg-gray-800/60" />
+            <Button
+              variant="ghost"
+              className="w-full text-gray-400 hover:text-red-400 hover:bg-red-500/5 transition-all text-xs h-8"
+              disabled
+            >
+              <Gavel className="size-3 mr-2" />
+              Raise a Dispute (Coming Soon)
+            </Button>
+          </>
+        )}
+
         {/* Cancel Bounty */}
         {canCancel && (
           <>
@@ -417,6 +437,9 @@ export function MobileCTA({ bounty, onCancelled }: MobileCTAProps) {
   const isCompetition = bounty.type === "COMPETITION";
   const isCreator =
     (session?.user as { id?: string } | undefined)?.id === bounty.createdBy;
+
+  const canRaiseDispute = useCanRaiseDispute(bounty);
+
   const canCancel =
     isCreator && (bounty.status === "OPEN" || bounty.status === "IN_PROGRESS");
 
@@ -531,6 +554,18 @@ export function MobileCTA({ bounty, onCancelled }: MobileCTAProps) {
             </Button>
           )}
         </div>
+      )}
+
+      {/* Mobile Raise Dispute — coming soon */}
+      {canRaiseDispute && (
+        <Button
+          variant="ghost"
+          className="w-full mt-2 text-gray-400 text-xs h-8"
+          disabled
+        >
+          <Gavel className="size-3 mr-2" />
+          Raise a Dispute (Coming Soon)
+        </Button>
       )}
 
       {/* Mobile Cancel Dialog */}
