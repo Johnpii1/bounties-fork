@@ -18,6 +18,7 @@ import { formatDistanceToNow } from "date-fns";
 import {
   useNotifications,
   type NotificationItem,
+  type NotificationType,
 } from "@/hooks/use-notifications";
 import { authClient } from "@/lib/auth-client";
 import {
@@ -66,48 +67,18 @@ const eventLabels: Record<
   mentions: "Mentions and replies",
 };
 
-function categorizeNotification(
-  item: NotificationItem,
-): "newBounty" | "applicationUpdate" | "bountyCompleted" | "mentions" | null {
-  const msg = item.message.toLowerCase();
+const TYPE_TO_GROUP: Record<
+  NotificationType,
+  "newBounty" | "applicationUpdate" | "bountyCompleted" | "mentions" | null
+> = {
+  "new-application": "applicationUpdate",
+  "submission-reviewed": "applicationUpdate",
+  "bounty-updated": "newBounty",
+  "saved-bounty-updated": "applicationUpdate",
+};
 
-  if (
-    msg.includes("mention") ||
-    msg.includes("replied") ||
-    msg.includes("reply")
-  ) {
-    return "mentions";
-  }
-
-  if (msg.includes("completed") || msg.includes("complete")) {
-    return "bountyCompleted";
-  }
-
-  if (
-    msg.includes("new bounty") ||
-    msg.includes("posted a new") ||
-    msg.includes("created a new bounty")
-  ) {
-    return "newBounty";
-  }
-
-  if (
-    item.type === "new-application" ||
-    item.type === "submission-reviewed" ||
-    msg.includes("application") ||
-    msg.includes("submitted") ||
-    msg.includes("submission") ||
-    msg.includes("reviewed") ||
-    msg.includes("approved")
-  ) {
-    return "applicationUpdate";
-  }
-
-  if (item.type === "bounty-updated" || item.type === "saved-bounty-updated") {
-    return "applicationUpdate";
-  }
-
-  return null;
+function categorizeNotification(item: NotificationItem) {
+  return TYPE_TO_GROUP[item.type] ?? null;
 }
 
 export function NotificationsTab() {
