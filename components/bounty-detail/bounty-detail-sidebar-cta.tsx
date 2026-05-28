@@ -72,6 +72,11 @@ export function SidebarCTA({ bounty, onCancelled }: SidebarCTAProps) {
     submissionCount,
     ctaLabel,
     isCreator,
+    applyForSlotMutation,
+    handleApplyForSlot,
+    isSlotsFull,
+    isAlreadyJoined,
+    applyForSlotButtonLabel,
   } = useBountyCTAState({ bounty, onCancelled });
 
   return (
@@ -174,6 +179,25 @@ export function SidebarCTA({ bounty, onCancelled }: SidebarCTAProps) {
               {canAct && !isPastDeadline ? "Join Competition" : ctaLabel()}
             </Button>
           )
+        ) : bounty.type === "MULTI_WINNER_MILESTONE" && canAct && !isCreator ? (
+          <Button
+            className="w-full h-11 font-bold tracking-wide"
+            disabled={
+              isSlotsFull ||
+              isAlreadyJoined ||
+              !walletAddress ||
+              applyForSlotMutation.isPending
+            }
+            size="lg"
+            onClick={() => void handleApplyForSlot()}
+          >
+            {applyForSlotMutation.isPending ? (
+              <Loader2 className="mr-2 size-4 animate-spin" />
+            ) : (
+              <Users className="mr-2 size-4" />
+            )}
+            {applyForSlotButtonLabel}
+          </Button>
         ) : bounty.type === "MILESTONE_BASED" && canAct && !isCreator ? (
           <ApplicationDialog
             bountyTitle={bounty.title}

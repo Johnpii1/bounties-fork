@@ -13,6 +13,7 @@ import { Clock, Users, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { BountyFieldsFragment } from "@/lib/graphql/generated";
+import type { Bounty } from "@/types/bounty";
 import { EscrowStatus } from "./escrow-status";
 import { useEscrowPool } from "@/hooks/use-escrow";
 import { getRoundPhase } from "@/hooks/use-lightning-rounds";
@@ -223,6 +224,12 @@ export function BountyCard({
                 <Users className="size-3" />
                 {slotCount}
                 {maxParticipants != null ? `/${maxParticipants}` : ""} joined
+              </Badge>
+            )}
+            {bounty.type === "MULTI_WINNER_MILESTONE" && (
+              <Badge className="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-xs px-2.5 py-1 flex items-center gap-1">
+                <Users className="size-3" />
+                {(bounty as unknown as Bounty).totalSlotsOccupied ?? 0} / {(bounty as unknown as Bounty).maxSlots ?? 5} slots
               </Badge>
             )}
           </div>

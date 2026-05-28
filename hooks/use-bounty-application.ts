@@ -29,6 +29,10 @@ type ApplicationContractClient = {
     bountyId: bigint;
     points: number;
   }) => Promise<{ txHash: string }>;
+  applyForSlot: (params: {
+    applicant: string;
+    bountyId: bigint;
+  }) => Promise<{ txHash: string }>;
 };
 
 // ---------------------------------------------------------------------------
@@ -244,6 +248,73 @@ export function useApproveApplicationSubmission() {
     },
     onSettled: (_r, _e, v) => {
       qc.invalidateQueries({ queryKey: bountyKeys.detail(v.bountyId) });
+      qc.invalidateQueries({ queryKey: bountyKeys.lists() });
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Hook: apply for slot (BountyRegistry.apply_for_slot)
+// ---------------------------------------------------------------------------
+
+import { authClient } from "@/lib/auth-client";
+import { MOCK_MODEL4_MILESTONES } from "@/lib/mock/model4";
+import type { ContributorProgress, Bounty } from "@/types/bounty";
+
+export function useApplyForSlot() {
+  const qc = useQueryClient();
+  const { data: session } = authClient.useSession();
+
+  return useMutation({
+    mutationFn: async ({
+      bountyId,
+      applicantAddress,
+    }: {
+      bountyId: string;
+      applicantAddress: string;
+    }) => {
+      const client = resolveApplicationClient();
+      return client.applyForSlot({
+        applicant: applicantAddress,
+        bountyId: toBountyIdBigInt(bountyId),
+      });
+    },
+    onMutate: async ({ bountyId }) => {
+      await qc.cancelQueries({ queryKey: bountyKeys.detail(bountyId) });
+      const prev = qc.getQueryData<BountyQuery & { bounty?: Partial<Bounty> }>(
+        bountyKeys.detail(bountyId),
+      );
+      if (prev?.bounty) {
+        const milestones = prev.bounty.milestones ?? MOCK_MODEL4_MILESTONES;
+        const firstMilestoneId = milestones[0]?.id ?? "m1";
+        const newProgress: ContributorProgress = {
+          userId: session?.user?.id ?? "unknown-user",
+          userName: session?.user?.name ?? "Contributor",
+          userAvatarUrl: session?.user?.image ?? "https://github.com/shadcn.png",
+          currentMilestoneId: firstMilestoneId,
+        };
+        const prevProgress = prev.bounty.contributorProgress ?? [];
+        const updatedProgress = [...prevProgress, newProgress];
+        const occupied = (prev.bounty.totalSlotsOccupied ?? 0) + 1;
+
+        qc.setQueryData<BountyQuery & { bounty?: Partial<Bounty> }>(bountyKeys.detail(bountyId), {
+          ...prev,
+          bounty: {
+            ...prev.bounty,
+            totalSlotsOccupied: occupied,
+            contributorProgress: updatedProgress,
+          },
+        });
+      }
+      return { prev, bountyId };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(bountyKeys.detail(ctx.bountyId), ctx.prev);
+    },
+    onSettled: (_r, _e, variables) => {
+      if (variables?.bountyId) {
+        qc.invalidateQueries({ queryKey: bountyKeys.detail(variables.bountyId) });
+      }
       qc.invalidateQueries({ queryKey: bountyKeys.lists() });
     },
   });

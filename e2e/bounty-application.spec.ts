@@ -20,6 +20,53 @@ import { test, expect, type Page } from "@playwright/test";
 // Must be a valid UUID (all hex chars) so toBountyIdBigInt() in
 // use-competition-bounty.ts can parse it without throwing ContestError("tx_failed").
 const BOUNTY_ID = "e2ec0bcd-dead-beef-cafe-ab01cd02ef03";
+const BOUNTY_ID_MULTI = "e2ec0bcd-dead-beef-cafe-ab01cd02ef04";
+
+const MOCK_MULTI_WINNER_BOUNTY_FRAGMENT = {
+  __typename: "Bounty",
+  id: BOUNTY_ID_MULTI,
+  title: "Multi-winner milestone bounty",
+  description: "Test multi-winner milestone bounty description.",
+  status: "OPEN",
+  type: "MULTI_WINNER_MILESTONE",
+  rewardAmount: 2000,
+  rewardCurrency: "XLM",
+  createdAt: "2025-01-10T09:00:00Z",
+  updatedAt: "2025-01-24T14:20:00Z",
+  organizationId: "org-privacy-lab",
+  projectId: "proj-zkp",
+  bountyWindowId: null,
+  githubIssueUrl: "https://github.com/stellar-privacy/zkp/issues/4",
+  githubIssueNumber: 4,
+  createdBy: "user-other",
+  organization: {
+    __typename: "BountyOrganization",
+    id: "org-privacy-lab",
+    name: "Stellar Privacy Lab",
+    logo: null,
+    slug: "stellar-privacy-lab",
+  },
+  project: {
+    __typename: "BountyProject",
+    id: "proj-zkp",
+    title: "ZKP",
+    description: null,
+  },
+  bountyWindow: null,
+  _count: { __typename: "BountyCount", submissions: 0 },
+  submissions: [],
+  milestones: [
+    {
+      id: "m1",
+      title: "Milestone 1: Design",
+      description: "Design the UI/UX for the feature.",
+      isCompleted: false,
+    }
+  ],
+  contributorProgress: [],
+  maxSlots: 5,
+  totalSlotsOccupied: 0,
+};
 
 const MOCK_BOUNTY_FRAGMENT = {
   __typename: "Bounty",
@@ -87,6 +134,16 @@ async function setupMocks(page: Page) {
         return { txHash: "0xfake-e2e-txhash" };
       },
     } as ContestContracts;
+
+    (globalThis as { __applyForSlotCalls?: number }).__applyForSlotCalls = 0;
+    (globalThis as { __applicationContracts?: unknown }).__applicationContracts = {
+      applyForSlot: async () => {
+        (globalThis as { __applyForSlotCalls?: number }).__applyForSlotCalls =
+          ((globalThis as { __applyForSlotCalls?: number }).__applyForSlotCalls ??
+            0) + 1;
+        return { txHash: "0xfake-e2e-slot-txhash" };
+      },
+    };
   });
 
   await page.route("**/api/auth/**", async (route) => {
@@ -129,8 +186,8 @@ async function setupMocks(page: Page) {
           body: JSON.stringify({
             data: {
               bounties: {
-                bounties: [MOCK_BOUNTY_FRAGMENT],
-                total: 1,
+                bounties: [MOCK_BOUNTY_FRAGMENT, MOCK_MULTI_WINNER_BOUNTY_FRAGMENT],
+                total: 2,
                 limit: 20,
                 offset: 0,
               },
@@ -139,11 +196,15 @@ async function setupMocks(page: Page) {
         });
         return;
       case "Bounty":
+        const requestedId = (body as any).variables?.id;
+        const bountyData = requestedId === BOUNTY_ID_MULTI
+          ? MOCK_MULTI_WINNER_BOUNTY_FRAGMENT
+          : MOCK_BOUNTY_FRAGMENT;
         await route.fulfill({
           status: 200,
           contentType: "application/json",
           body: JSON.stringify({
-            data: { bounty: { ...MOCK_BOUNTY_FRAGMENT, submissions: [] } },
+            data: { bounty: { ...bountyData, submissions: [] } },
           }),
         });
         return;
@@ -318,5 +379,108 @@ test.describe("Bounty application flow", () => {
     await expect(page.getByRole("button", { name: /Completed/i })).toBeDisabled(
       { timeout: 8_000 },
     );
+  });
+
+  test.describe("MULTI_WINNER_MILESTONE Apply for Slot", () => {
+    test("renders enabled Apply for Slot button", async ({ page }) => {
+      await page.goto(`/bounty/${BOUNTY_ID_MULTI}`);
+      const btn = page.getByRole("button", { name: "Apply for Slot" }).first();
+      await expect(btn).toBeVisible();
+      await expect(btn).toBeEnabled();
+    });
+
+    test("clicking Apply for Slot calls contract and updates UI", async ({ page }) => {
+      await page.goto(`/bounty/${BOUNTY_ID_MULTI}`);
+      const btn = page.getByRole("button", { name: "Apply for Slot" }).first();
+      await expect(btn).toBeEnabled();
+      await btn.click();
+
+      // Assert the contract is invoked
+      await expect
+        .poll(
+          async () =>
+            page.evaluate(
+              () =>
+                (globalThis as { __applyForSlotCalls?: number })
+                  .__applyForSlotCalls ?? 0,
+            ),
+          { timeout: 8_000 },
+        )
+        .toBeGreaterThan(0);
+    });
+
+    test("shows Slots Full and disables when slot count is at capacity", async ({ page }) => {
+      await page.route("**/api/graphql", async (route) => {
+        let body: { operationName?: string } = {};
+        try {
+          body = JSON.parse(route.request().postData() ?? "{}") as {
+            operationName?: string;
+          };
+        } catch { /* ignore */ }
+        if (body.operationName === "Bounty") {
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+              data: {
+                bounty: {
+                  ...MOCK_MULTI_WINNER_BOUNTY_FRAGMENT,
+                  totalSlotsOccupied: 5,
+                  maxSlots: 5,
+                  submissions: [],
+                },
+              },
+            }),
+          });
+          return;
+        }
+        await route.fallback();
+      });
+
+      await page.goto(`/bounty/${BOUNTY_ID_MULTI}`);
+      const btn = page.getByRole("button", { name: "Slots Full" }).first();
+      await expect(btn).toBeVisible();
+      await expect(btn).toBeDisabled();
+    });
+
+    test("shows Already Joined and disables when user is in contributorProgress", async ({ page }) => {
+      await page.route("**/api/graphql", async (route) => {
+        let body: { operationName?: string } = {};
+        try {
+          body = JSON.parse(route.request().postData() ?? "{}") as {
+            operationName?: string;
+          };
+        } catch { /* ignore */ }
+        if (body.operationName === "Bounty") {
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+              data: {
+                bounty: {
+                  ...MOCK_MULTI_WINNER_BOUNTY_FRAGMENT,
+                  contributorProgress: [
+                    {
+                      userId: MOCK_SESSION.user.id,
+                      userName: MOCK_SESSION.user.name,
+                      userAvatarUrl: "https://github.com/avatar.png",
+                      currentMilestoneId: "m1",
+                    },
+                  ],
+                  submissions: [],
+                },
+              },
+            }),
+          });
+          return;
+        }
+        await route.fallback();
+      });
+
+      await page.goto(`/bounty/${BOUNTY_ID_MULTI}`);
+      const btn = page.getByRole("button", { name: "Already Joined" }).first();
+      await expect(btn).toBeVisible();
+      await expect(btn).toBeDisabled();
+    });
   });
 });

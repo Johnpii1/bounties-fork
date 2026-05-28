@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { useCompetitionJoinState } from "@/hooks/use-competition-join-state";
 import { useCanRaiseDispute } from "@/hooks/use-can-raise-dispute";
 import { useCancelBountyDialog } from "@/hooks/use-cancel-bounty-dialog";
-import { useApplyToBounty } from "@/hooks/use-bounty-application";
+import { useApplyToBounty, useApplyForSlot } from "@/hooks/use-bounty-application";
 import { authClient } from "@/lib/auth-client";
 import type { BountyFieldsFragment } from "@/lib/graphql/generated";
 import type {
@@ -44,6 +44,9 @@ export function useBountyCTAState({
   // Apply to bounty mutation
   const { mutateAsync: applyToBounty } = useApplyToBounty();
 
+  // Apply for slot mutation
+  const applyForSlotMutation = useApplyForSlot();
+
   // Computed flags
   const canAct = bounty.status === "OPEN";
   const isFcfs = bounty.type === "FIXED_PRICE";
@@ -76,6 +79,31 @@ export function useBountyCTAState({
       bountyId: bounty.id,
       applicantAddress: walletAddress,
       proposal: JSON.stringify(values),
+    });
+  };
+
+  // Multi-winner milestone states
+  const isSlotsFull = useMemo(
+    () => (bounty.totalSlotsOccupied ?? 0) >= (bounty.maxSlots ?? 5),
+    [bounty.totalSlotsOccupied, bounty.maxSlots],
+  );
+
+  const isAlreadyJoined = useMemo(
+    () => bounty.contributorProgress?.some((c) => c.userId === session?.user?.id) ?? false,
+    [bounty.contributorProgress, session?.user?.id],
+  );
+
+  const applyForSlotButtonLabel = useMemo(() => {
+    if (isSlotsFull) return "Slots Full";
+    if (isAlreadyJoined) return "Already Joined";
+    return "Apply for Slot";
+  }, [isSlotsFull, isAlreadyJoined]);
+
+  const handleApplyForSlot = async () => {
+    if (!walletAddress) return;
+    await applyForSlotMutation.mutateAsync({
+      bountyId: bounty.id,
+      applicantAddress: walletAddress,
     });
   };
 
@@ -118,6 +146,13 @@ export function useBountyCTAState({
 
     // Apply state
     handleApply,
+
+    // Apply for slot state
+    applyForSlotMutation,
+    handleApplyForSlot,
+    isSlotsFull,
+    isAlreadyJoined,
+    applyForSlotButtonLabel,
 
     // Copy state
     copied,
