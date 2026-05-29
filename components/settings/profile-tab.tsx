@@ -13,7 +13,7 @@ import { Loader2 } from "lucide-react";
 import { useUpdateUserMutation } from "@/hooks/use-user-mutations";
 import { useQueryClient } from "@tanstack/react-query";
 import { authKeys } from "@/lib/query/query-keys";
-import { authClient } from "@/lib/auth-client";
+import { useUserRole } from "@/hooks/use-user-role";
 
 const profileSchema = z.object({
   name: z
@@ -65,11 +65,7 @@ interface ProfileTabProps {
 export function ProfileTab({ defaultValues }: ProfileTabProps) {
   const queryClient = useQueryClient();
   const { mutateAsync, isPending } = useUpdateUserMutation();
-  const { data: session } = authClient.useSession();
-  const currentRole = (session?.user as { role?: string } | undefined)?.role as
-    | "sponsor"
-    | "contributor"
-    | undefined;
+  const currentRole = useUserRole();
   const [isTogglingRole, setIsTogglingRole] = useState(false);
 
   const form = useForm<ProfileFormValues>({

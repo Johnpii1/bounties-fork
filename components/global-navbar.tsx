@@ -21,17 +21,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { authClient } from "@/lib/auth-client";
+import { useUserRole } from "@/hooks/use-user-role";
 
 import { Wallet, LogIn, Fingerprint } from "lucide-react";
 
 export function GlobalNavbar() {
   const pathname = usePathname();
-  const { data: session } = authClient.useSession();
-  const userRole = (session?.user as { role?: string } | undefined)?.role as
-    | "sponsor"
-    | "contributor"
-    | undefined;
+  const userRole = useUserRole();
   const { walletInfo, isConnected, isRegistered, connect, isLoading } =
     useSmartWallet();
 
