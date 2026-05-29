@@ -243,10 +243,28 @@ export function BountyDetailClient({ bountyId }: { bountyId: string }) {
         {bounty.type === "MILESTONE_BASED" &&
           isAssignedApplicant &&
           walletAddress &&
-          bounty.status === "IN_PROGRESS" && (
+          (() => {
+            const mySubmission = bounty.submissions?.find(
+              (s) => s.submittedBy === session?.user?.id,
+            );
+            const hasRevision =
+              mySubmission?.status === "REVISION_REQUESTED" &&
+              !!mySubmission?.reviewComments;
+            return (
+              bounty.status === "IN_PROGRESS" ||
+              (bounty.status === "UNDER_REVIEW" && hasRevision)
+            );
+          })() && (
             <ApplicationSubmitWorkPanel
               bountyId={bountyId}
               contributorAddress={walletAddress}
+              revisionFeedback={
+                bounty.submissions?.find(
+                  (s) =>
+                    s.submittedBy === session?.user?.id &&
+                    s.status === "REVISION_REQUESTED",
+                )?.reviewComments ?? undefined
+              }
             />
           )}
 
@@ -256,6 +274,7 @@ export function BountyDetailClient({ bountyId }: { bountyId: string }) {
             <SubmissionApprovalPanel
               bounty={bounty}
               creatorAddress={walletAddress}
+              submissionId={bounty.submissions?.[0]?.id}
               submittedWorkCid={
                 bounty.submissions?.[0]?.githubPullRequestUrl || undefined
               }
