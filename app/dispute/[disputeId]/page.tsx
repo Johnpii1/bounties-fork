@@ -2,19 +2,13 @@
 
 import { use, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  useAdminDisputeDetailQuery,
+import { 
+  useAdminDisputeDetailQuery, 
   useResolveDisputeMutation,
-  DisputeResolutionEnum,
+  DisputeResolutionEnum 
 } from "@/lib/graphql/generated";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -41,7 +35,7 @@ export default function DisputeReviewPage({ params }: DisputePageProps) {
     },
     onError: (err: Error) => {
       toast.error(`Failed to resolve dispute: ${err.message}`);
-    },
+    }
   });
 
   if (isLoading) {
@@ -56,11 +50,7 @@ export default function DisputeReviewPage({ params }: DisputePageProps) {
     return (
       <div className="p-8 text-center border rounded-xl bg-muted/20">
         <h1 className="text-2xl font-bold">Dispute not found</h1>
-        <Button
-          onClick={() => router.back()}
-          className="mt-4"
-          variant="outline"
-        >
+        <Button onClick={() => router.back()} className="mt-4" variant="outline">
           Go Back
         </Button>
       </div>
@@ -80,17 +70,13 @@ export default function DisputeReviewPage({ params }: DisputePageProps) {
       input: {
         resolution,
         resolutionNotes,
-      },
+      }
     });
   };
 
   return (
     <div className="container max-w-4xl py-10 space-y-6">
-      <Button
-        variant="ghost"
-        onClick={() => router.back()}
-        className="gap-2 mb-4"
-      >
+      <Button variant="ghost" onClick={() => router.back()} className="gap-2 mb-4">
         <ArrowLeft className="h-4 w-4" />
         Back to Disputes
       </Button>
@@ -101,14 +87,9 @@ export default function DisputeReviewPage({ params }: DisputePageProps) {
             <Gavel className="h-8 w-8 text-primary" />
             Dispute Resolution
           </h1>
-          <p className="text-muted-foreground font-mono text-sm">
-            Case #{disputeId}
-          </p>
+          <p className="text-muted-foreground font-mono text-sm">Case #{disputeId}</p>
         </div>
-        <Badge
-          variant={dispute.status === "OPEN" ? "default" : "secondary"}
-          className="px-3 py-1"
-        >
+        <Badge variant={dispute.status === 'OPEN' ? 'default' : 'secondary'} className="px-3 py-1">
           {dispute.status}
         </Badge>
       </div>
@@ -121,17 +102,11 @@ export default function DisputeReviewPage({ params }: DisputePageProps) {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label className="text-[10px] uppercase text-gray-500 tracking-wider">
-                Reason
-              </Label>
-              <p className="font-medium text-gray-200">
-                {dispute.reason.replace(/_/g, " ")}
-              </p>
+              <Label className="text-[10px] uppercase text-gray-500 tracking-wider">Reason</Label>
+              <p className="font-medium text-gray-200">{dispute.reason.replace(/_/g, ' ')}</p>
             </div>
             <div>
-              <Label className="text-[10px] uppercase text-gray-500 tracking-wider">
-                Description
-              </Label>
+              <Label className="text-[10px] uppercase text-gray-500 tracking-wider">Description</Label>
               <p className="mt-1 text-sm text-gray-300 whitespace-pre-wrap leading-relaxed">
                 {dispute.description}
               </p>
@@ -146,21 +121,13 @@ export default function DisputeReviewPage({ params }: DisputePageProps) {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label className="text-[10px] uppercase text-gray-500 tracking-wider">
-                Campaign ID
-              </Label>
-              <p className="text-sm font-mono text-gray-400">
-                {dispute.campaignId}
-              </p>
+              <Label className="text-[10px] uppercase text-gray-500 tracking-wider">Campaign ID</Label>
+              <p className="text-sm font-mono text-gray-400">{dispute.campaignId}</p>
             </div>
             {dispute.milestoneId && (
               <div>
-                <Label className="text-[10px] uppercase text-gray-500 tracking-wider">
-                  Milestone ID
-                </Label>
-                <p className="text-sm font-mono text-gray-400">
-                  {dispute.milestoneId}
-                </p>
+                <Label className="text-[10px] uppercase text-gray-500 tracking-wider">Milestone ID</Label>
+                <p className="text-sm font-mono text-gray-400">{dispute.milestoneId}</p>
               </div>
             )}
           </CardContent>
@@ -170,9 +137,7 @@ export default function DisputeReviewPage({ params }: DisputePageProps) {
       <Card className="border-primary/20 bg-primary/5 shadow-2xl">
         <CardHeader>
           <CardTitle>Arbitration Decision</CardTitle>
-          <CardDescription>
-            Select a resolution and provide justification.
-          </CardDescription>
+          <CardDescription>Select a resolution and provide justification.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
@@ -187,7 +152,7 @@ export default function DisputeReviewPage({ params }: DisputePageProps) {
           </div>
 
           <div className="flex flex-wrap gap-4 pt-2">
-            <Button
+            <Button 
               onClick={() => handleResolve(DisputeResolutionEnum.Dismissed)}
               className="flex-1 gap-2 h-11"
               variant="default"
@@ -196,7 +161,7 @@ export default function DisputeReviewPage({ params }: DisputePageProps) {
               <ShieldCheck className="h-4 w-4" />
               Approve Contributor
             </Button>
-            <Button
+            <Button 
               onClick={() => handleResolve(DisputeResolutionEnum.FullRefund)}
               className="flex-1 gap-2 h-11"
               variant="destructive"

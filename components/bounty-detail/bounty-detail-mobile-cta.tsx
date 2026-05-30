@@ -18,7 +18,9 @@ import { BountyFieldsFragment } from "@/lib/graphql/generated";
 import { FcfsClaimButton } from "@/components/bounty/fcfs-claim-button";
 import type { CancellationRecord } from "@/types/escrow";
 import type { Bounty } from "@/types/bounty";
-import { ApplicationDialog } from "@/components/bounty/application-dialog";
+import {
+  ApplicationDialog,
+} from "@/components/bounty/application-dialog";
 import { useBountyCTAState } from "./use-bounty-cta-state";
 
 type SidebarBounty = BountyFieldsFragment & Partial<Bounty>;
@@ -162,13 +164,7 @@ export function MobileCTA({ bounty, onCancelled }: MobileCTAProps) {
               )
             }
           >
-            {canAct
-              ? "Submit to Bounty"
-              : bounty.status === "IN_PROGRESS"
-                ? "In Progress"
-                : bounty.status === "COMPLETED"
-                  ? "Completed"
-                  : "Not Available"}
+            {canAct ? "Submit to Bounty" : bounty.status === "IN_PROGRESS" ? "In Progress" : bounty.status === "COMPLETED" ? "Completed" : "Not Available"}
           </Button>
           {canCancel && (
             <Button

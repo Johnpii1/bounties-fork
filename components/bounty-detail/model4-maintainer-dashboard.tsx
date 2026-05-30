@@ -22,7 +22,12 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { useBountyApplication } from "@/hooks/use-bounty-application";
+import {
+  useReleasePayment,
+  useAdvanceContributor,
+  useRemoveContributor,
+  useSendMessage,
+} from "@/hooks/use-bounty-application";
 import {
   ChevronRight,
   UserMinus,
@@ -48,8 +53,10 @@ export function Model4MaintainerDashboard({
   maxSlots = 5,
   className,
 }: Model4MaintainerDashboardProps) {
-  const { releasePayment, advanceContributor, removeContributor, sendMessage } =
-    useBountyApplication(bountyId);
+  const releasePayment = useReleasePayment(bountyId);
+  const advanceContributor = useAdvanceContributor(bountyId);
+  const removeContributor = useRemoveContributor(bountyId);
+  const sendMessage = useSendMessage(bountyId);
 
   const [selectedContributor, setSelectedContributor] =
     React.useState<ContributorProgress | null>(null);

@@ -48,17 +48,11 @@ function SavedBountiesClient() {
         <div className="size-16 rounded-full bg-gray-800/50 flex items-center justify-center mb-4">
           <Bookmark className="size-8 text-gray-600" />
         </div>
-        <h3 className="text-xl font-bold mb-2 text-gray-200">
-          No saved bounties yet
-        </h3>
+        <h3 className="text-xl font-bold mb-2 text-gray-200">No saved bounties yet</h3>
         <p className="text-gray-400 max-w-md mx-auto mb-6">
           Bookmark interesting bounties to save them here for later review.
         </p>
-        <Button
-          asChild
-          variant="outline"
-          className="border-gray-700 hover:bg-gray-800"
-        >
+        <Button asChild variant="outline" className="border-gray-700 hover:bg-gray-800">
           <Link href="/bounty">Browse bounties</Link>
         </Button>
       </div>

@@ -2478,11 +2478,7 @@ export const useAdminDisputeDetailQuery = <
     UseQueryOptions<AdminDisputeDetailQuery, TError, TData>,
     "queryKey"
   > & {
-    queryKey?: UseQueryOptions<
-      AdminDisputeDetailQuery,
-      TError,
-      TData
-    >["queryKey"];
+    queryKey?: UseQueryOptions<AdminDisputeDetailQuery, TError, TData>["queryKey"];
   },
 ) => {
   return useQuery<AdminDisputeDetailQuery, TError, TData>({
@@ -2514,7 +2510,10 @@ export const ResolveDisputeDocument = new TypedDocumentString(`
 }
     `);
 
-export const useResolveDisputeMutation = <TError = unknown, TContext = unknown>(
+export const useResolveDisputeMutation = <
+  TError = unknown,
+  TContext = unknown,
+>(
   options?: UseMutationOptions<
     ResolveDisputeMutation,
     TError,

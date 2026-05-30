@@ -13,11 +13,7 @@ describe("useSubmissionDraft", () => {
     });
 
     return function Wrapper({ children }: { children: React.ReactNode }) {
-      return (
-        <QueryClientProvider client={queryClient}>
-          {children}
-        </QueryClientProvider>
-      );
+      return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
     };
   };
 
@@ -90,9 +86,7 @@ describe("useSubmissionDraft", () => {
       jest.advanceTimersByTime(1000); // AUTO_SAVE_DELAY
     });
 
-    await waitFor(() =>
-      expect(result.current.draft?.formData).toEqual(formData),
-    );
+    await waitFor(() => expect(result.current.draft?.formData).toEqual(formData));
     expect(result.current.draft?.formData).toEqual(formData);
     jest.useRealTimers();
   });
@@ -110,16 +104,12 @@ describe("useSubmissionDraft", () => {
       result1.current.saveDraft(formData);
     });
 
-    await waitFor(() =>
-      expect(result1.current.draft?.formData).toEqual(formData),
-    );
+    await waitFor(() => expect(result1.current.draft?.formData).toEqual(formData));
 
     const { result: result2 } = renderHook(() => useSubmissionDraft(bountyId), {
       wrapper: createWrapper(),
     });
-    await waitFor(() =>
-      expect(result2.current.draft?.formData).toEqual(formData),
-    );
+    await waitFor(() => expect(result2.current.draft?.formData).toEqual(formData));
     expect(result2.current.draft?.formData).toEqual(formData);
   });
 

@@ -32,7 +32,9 @@ import { CompetitionSubmission } from "@/components/bounty/competition-submissio
 import { CompetitionStatus } from "@/components/bounty/competition-status";
 import type { CancellationRecord } from "@/types/escrow";
 import type { Bounty } from "@/types/bounty";
-import { ApplicationDialog } from "@/components/bounty/application-dialog";
+import {
+  ApplicationDialog,
+} from "@/components/bounty/application-dialog";
 import { useBountyCTAState } from "./use-bounty-cta-state";
 
 type SidebarBounty = BountyFieldsFragment & Partial<Bounty>;

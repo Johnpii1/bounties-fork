@@ -98,12 +98,7 @@ export function DocumentUpload({
             </div>
           </div>
           {!uploaded && !uploading && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearFile}
-              aria-label="Clear file"
-            >
+            <Button variant="ghost" size="sm" onClick={clearFile} aria-label="Clear file">
               <X className="w-4 h-4" />
             </Button>
           )}

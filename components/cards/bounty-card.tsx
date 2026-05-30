@@ -124,8 +124,7 @@ export function BountyCard({ bounty }: BountyCardProps) {
               {bounty.type === "MULTI_WINNER_MILESTONE" && (
                 <Badge className="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-xs px-2 py-0.5 flex items-center gap-1">
                   <Users className="size-3" />
-                  {bounty.totalSlotsOccupied ?? 0} / {bounty.maxSlots ?? 5}{" "}
-                  slots
+                  {bounty.totalSlotsOccupied ?? 0} / {bounty.maxSlots ?? 5} slots
                 </Badge>
               )}
             </div>

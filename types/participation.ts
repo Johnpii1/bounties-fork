@@ -1,8 +1,4 @@
-export type ApplicationStatus =
-  | "pending"
-  | "approved"
-  | "rejected"
-  | "disputed";
+export type ApplicationStatus = "pending" | "approved" | "rejected" | "disputed";
 
 export interface Application {
   id: string;

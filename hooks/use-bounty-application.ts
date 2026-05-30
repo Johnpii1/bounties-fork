@@ -6,6 +6,16 @@ import { bountyKeys } from "@/lib/query/query-keys";
 import { MOCK_MODEL4_MILESTONES } from "@/lib/mock/model4";
 import type { BountyQuery } from "@/lib/graphql/generated";
 import type { ContributorProgress, Bounty, Milestone } from "@/types/bounty";
+import { escrowKeys } from "./use-escrow";
+import { EscrowService } from "@/lib/services/escrow";
+import type { EscrowPool } from "@/types/escrow";
+
+export type ExtendedBountyQuery = Omit<BountyQuery, "bounty"> & {
+  bounty?: BountyQuery["bounty"] & Partial<Bounty>;
+};
+
+export const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 
 // ---------------------------------------------------------------------------
 // Contract client shape (resolved from globalThis.__applicationContracts)
@@ -324,16 +334,13 @@ export function useApplyForSlot() {
     },
   });
 }
-type ExtendedBountyQuery = Omit<BountyQuery, "bounty"> & {
-  bounty?: BountyQuery["bounty"] & Partial<Bounty>;
-};
+// Static memory storage for messages
+const recordedMessages: Record<string, Array<{ contributorId: string; message: string; timestamp: string }>> = {};
 
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-export function useBountyApplication(bountyId: string) {
+export function useReleasePayment(bountyId: string) {
   const queryClient = useQueryClient();
 
-  const releasePayment = useMutation({
+  return useMutation({
     mutationFn: async ({
       contributorId,
       milestoneId,
@@ -341,16 +348,65 @@ export function useBountyApplication(bountyId: string) {
       contributorId: string;
       milestoneId: string;
     }) => {
-      await delay(1000);
-      return { contributorId, milestoneId };
+      // Calculate proportional milestone payment amount
+      const previous = queryClient.getQueryData<ExtendedBountyQuery>(
+        bountyKeys.detail(bountyId),
+      );
+      const totalAmount = previous?.bounty?.rewardAmount ?? 100;
+      const milestonesCount = previous?.bounty?.milestones?.length ?? 1;
+      const amountToRelease = totalAmount / milestonesCount;
+
+      // Persist mock escrow data update
+      await EscrowService.releasePayment(bountyId, amountToRelease);
+      return { contributorId, milestoneId, amountToRelease };
+    },
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: escrowKeys.pool(bountyId) });
+      const prevPool = queryClient.getQueryData<EscrowPool>(
+        escrowKeys.pool(bountyId),
+      );
+
+      const prevBounty = queryClient.getQueryData<ExtendedBountyQuery>(
+        bountyKeys.detail(bountyId),
+      );
+      const totalAmount = prevBounty?.bounty?.rewardAmount ?? 100;
+      const milestonesCount = prevBounty?.bounty?.milestones?.length ?? 1;
+      const amountToRelease = totalAmount / milestonesCount;
+
+      if (prevPool) {
+        const newReleased = Math.min(
+          prevPool.totalAmount,
+          prevPool.releasedAmount + amountToRelease,
+        );
+        const status =
+          newReleased >= prevPool.totalAmount
+            ? "Fully Released"
+            : "Partially Released";
+        queryClient.setQueryData(escrowKeys.pool(bountyId), {
+          ...prevPool,
+          releasedAmount: newReleased,
+          status,
+        });
+      }
+      return { prevPool };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.prevPool) {
+        queryClient.setQueryData(escrowKeys.pool(bountyId), context.prevPool);
+      }
     },
     onSuccess: () => {
-      // Optimistically invalidate to trigger a refresh of the escrow/bounty data
+      // Refresh bounty details and escrow pool data
       queryClient.invalidateQueries({ queryKey: bountyKeys.detail(bountyId) });
+      queryClient.invalidateQueries({ queryKey: escrowKeys.pool(bountyId) });
     },
   });
+}
 
-  const advanceContributor = useMutation({
+export function useAdvanceContributor(bountyId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
     mutationFn: async ({ contributorId }: { contributorId: string }) => {
       await delay(1000);
       return { contributorId };
@@ -406,9 +462,16 @@ export function useBountyApplication(bountyId: string) {
         queryClient.setQueryData(bountyKeys.detail(bountyId), context.previous);
       }
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: bountyKeys.detail(bountyId) });
+    },
   });
+}
 
-  const removeContributor = useMutation({
+export function useRemoveContributor(bountyId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
     mutationFn: async ({ contributorId }: { contributorId: string }) => {
       await delay(1000);
       return { contributorId };
@@ -424,6 +487,9 @@ export function useBountyApplication(bountyId: string) {
       if (previous?.bounty) {
         const contributorProgress: ContributorProgress[] =
           previous.bounty.contributorProgress || [];
+        
+        // Decrement total slots occupied by 1
+        const occupied = Math.max(0, (previous.bounty.totalSlotsOccupied ?? 1) - 1);
 
         queryClient.setQueryData<ExtendedBountyQuery>(
           bountyKeys.detail(bountyId),
@@ -431,10 +497,10 @@ export function useBountyApplication(bountyId: string) {
             ...previous,
             bounty: {
               ...previous.bounty,
+              totalSlotsOccupied: occupied,
               contributorProgress: contributorProgress.filter(
                 (c) => c.userId !== contributorId,
               ),
-              // totalSlotsOccupied isn't explicitly in the standard schema but we'd decrement it if it exists.
             },
           },
         );
@@ -446,9 +512,14 @@ export function useBountyApplication(bountyId: string) {
         queryClient.setQueryData(bountyKeys.detail(bountyId), context.previous);
       }
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: bountyKeys.detail(bountyId) });
+    },
   });
+}
 
-  const sendMessage = useMutation({
+export function useSendMessage(bountyId: string) {
+  return useMutation({
     mutationFn: async ({
       contributorId,
       message,
@@ -457,15 +528,20 @@ export function useBountyApplication(bountyId: string) {
       message: string;
     }) => {
       await delay(1000);
+      
+      // Store in static memory for real message logging/recording
+      if (!recordedMessages[bountyId]) {
+        recordedMessages[bountyId] = [];
+      }
+      recordedMessages[bountyId].push({
+        contributorId,
+        message,
+        timestamp: new Date().toISOString(),
+      });
+      
+      console.log(`[useSendMessage] Recorded message for bountyId ${bountyId}: contributorId=${contributorId}, message="${message}"`);
       return { contributorId, message };
     },
-    // Mock success - in a real implementation we would invalidate message queries or optimistically add the message
   });
-
-  return {
-    releasePayment,
-    advanceContributor,
-    removeContributor,
-    sendMessage,
-  };
 }
+
