@@ -1,7 +1,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { bountyKeys } from "@/lib/query/query-keys";
 import { BountyQuery } from "@/lib/graphql/generated";
-import type { Bounty } from "@/types/bounty";
+import type { Bounty, ContributorProgress, Milestone } from "@/types/bounty";
+
+type ExtendedBountyQuery = Omit<BountyQuery, "bounty"> & {
+  bounty?: BountyQuery["bounty"] & Partial<Bounty>;
+};
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -34,25 +38,23 @@ export function useBountyApplication(bountyId: string) {
       await queryClient.cancelQueries({
         queryKey: bountyKeys.detail(bountyId),
       });
-      const previous = queryClient.getQueryData<BountyQuery>(
+      const previous = queryClient.getQueryData<ExtendedBountyQuery>(
         bountyKeys.detail(bountyId),
       );
 
       if (previous?.bounty) {
-        const contributorProgress =
-          (previous.bounty as unknown as Bounty).contributorProgress || [];
+        const contributorProgress: ContributorProgress[] =
+          previous.bounty.contributorProgress || [];
         const contributorIndex = contributorProgress.findIndex(
-          (c: { userId: string; currentMilestoneId: string }) =>
-            c.userId === contributorId,
+          (c) => c.userId === contributorId,
         );
 
         if (contributorIndex >= 0) {
-          const milestones =
-            (previous.bounty as unknown as Bounty).milestones || [];
+          const milestones: Milestone[] = previous.bounty.milestones || [];
           const currentMilestoneId =
             contributorProgress[contributorIndex].currentMilestoneId;
           const milestoneIndex = milestones.findIndex(
-            (m: { id: string }) => m.id === currentMilestoneId,
+            (m) => m.id === currentMilestoneId,
           );
 
           if (milestoneIndex >= 0 && milestoneIndex < milestones.length - 1) {
@@ -63,13 +65,16 @@ export function useBountyApplication(bountyId: string) {
               currentMilestoneId: nextMilestone.id,
             };
 
-            queryClient.setQueryData<BountyQuery>(bountyKeys.detail(bountyId), {
-              ...previous,
-              bounty: {
-                ...previous.bounty,
-                contributorProgress: newProgress,
-              } as unknown as BountyQuery["bounty"],
-            });
+            queryClient.setQueryData<ExtendedBountyQuery>(
+              bountyKeys.detail(bountyId),
+              {
+                ...previous,
+                bounty: {
+                  ...previous.bounty,
+                  contributorProgress: newProgress,
+                },
+              },
+            );
           }
         }
       }
@@ -91,24 +96,27 @@ export function useBountyApplication(bountyId: string) {
       await queryClient.cancelQueries({
         queryKey: bountyKeys.detail(bountyId),
       });
-      const previous = queryClient.getQueryData<BountyQuery>(
+      const previous = queryClient.getQueryData<ExtendedBountyQuery>(
         bountyKeys.detail(bountyId),
       );
 
       if (previous?.bounty) {
-        const contributorProgress =
-          (previous.bounty as unknown as Bounty).contributorProgress || [];
+        const contributorProgress: ContributorProgress[] =
+          previous.bounty.contributorProgress || [];
 
-        queryClient.setQueryData<BountyQuery>(bountyKeys.detail(bountyId), {
-          ...previous,
-          bounty: {
-            ...previous.bounty,
-            contributorProgress: contributorProgress.filter(
-              (c: { userId: string; currentMilestoneId: string }) =>
-                c.userId !== contributorId,
-            ),
-          } as unknown as BountyQuery["bounty"],
-        });
+        queryClient.setQueryData<ExtendedBountyQuery>(
+          bountyKeys.detail(bountyId),
+          {
+            ...previous,
+            bounty: {
+              ...previous.bounty,
+              contributorProgress: contributorProgress.filter(
+                (c) => c.userId !== contributorId,
+              ),
+              // totalSlotsOccupied isn't explicitly in the standard schema but we'd decrement it if it exists.
+            },
+          },
+        );
       }
       return { previous };
     },
