@@ -94,7 +94,7 @@ jobs:
           NEXT_PUBLIC_NATIVE_TOKEN_CONTRACT: ${{ secrets.NEXT_PUBLIC_NATIVE_TOKEN_CONTRACT || 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC' }}
 
       - name: Install Playwright Chromium
-        run: pnpm exec playwright install chromium
+        run: pnpm exec playwright install chromium --with-deps
 
       - name: Run E2E tests
         run: pnpm run test:e2e
