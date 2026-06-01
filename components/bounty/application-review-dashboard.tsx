@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   Users,
   CheckCircle,
@@ -59,14 +59,14 @@ export function ApplicationReviewDashboard({
   applications,
 }: ApplicationReviewDashboardProps) {
   const [selectedForCompare, setSelectedForCompare] = useState<string[]>([]);
-  const [reviewApplications, setReviewApplications] = useState(applications);
   const [declineTarget, setDeclineTarget] = useState<Application | null>(null);
   const [declineReason, setDeclineReason] = useState("");
+
   const { mutate: selectApplicant, isPending: isSelecting } =
     useSelectApplicant();
-  useEffect(() => {
-    setReviewApplications(applications);
-  }, [applications]);
+  const { mutate: declineApplicant, isPending: isDeclining } =
+    useDeclineApplicant();
+
   const handleSelectApplicant = (applicantAddress: string) => {
     selectApplicant({
       bountyId,
@@ -75,20 +75,13 @@ export function ApplicationReviewDashboard({
     });
   };
 
-  const { mutate: declineApplicant, isPending: isDeclining } =
-    useDeclineApplicant();
-
   const handleDeclineApplicant = () => {
     if (!declineTarget) return;
 
-    const previousApplications = reviewApplications;
     const applicantAddress = declineTarget.applicantAddress;
     const reason = declineReason.trim();
 
-    setReviewApplications((current) =>
-      current.filter((app) => app.applicantAddress !== applicantAddress),
-    );
-
+    // Drop the declined applicant from the comparison set if it was selected
     setSelectedForCompare((current) =>
       current.filter((id) => id !== declineTarget.id),
     );
@@ -106,13 +99,13 @@ export function ApplicationReviewDashboard({
           setDeclineReason("");
         },
         onError: () => {
-          setReviewApplications(previousApplications);
           toast.error("Failed to decline applicant");
         },
       },
     );
   };
-  const visibleApplications = reviewApplications;
+
+  const visibleApplications = applications;
   const toggleCompare = (id: string) => {
     if (selectedForCompare.includes(id)) {
       setSelectedForCompare(selectedForCompare.filter((i) => i !== id));
@@ -314,7 +307,3 @@ export function ApplicationReviewDashboard({
     </div>
   );
 }
-function useEffect(arg0: () => void, arg1: Application[][]) {
-  throw new Error("Function not implemented.");
-}
-

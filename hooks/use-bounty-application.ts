@@ -184,7 +184,6 @@ type DeclinedApplicationRecord = {
   bountyId?: string;
   applicantAddress?: string;
   status?: string;
-  declinedReason?: string;
   declineReason?: string;
   declinedAt?: string;
 };
@@ -237,7 +236,6 @@ export function useDeclineApplicant() {
                       ...application,
                       status: "DECLINED",
                       declineReason: reason?.trim() || undefined,
-                      declinedReason: reason?.trim() || undefined,
                       declinedAt,
                     }
                   : application,
