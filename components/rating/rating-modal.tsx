@@ -1,5 +1,18 @@
-import React, { useState } from 'react';
-import { RatingStars } from './rating-stars';
+"use client";
+
+import { useState } from "react";
+import type React from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { RatingStars } from "./rating-stars";
 
 interface RatingModalProps {
   contributor: {
@@ -15,16 +28,21 @@ interface RatingModalProps {
   onClose: () => void;
 }
 
-export const RatingModal: React.FC<RatingModalProps> = ({ contributor, bounty, onSubmit, onClose }) => {
+export const RatingModal = ({
+  contributor,
+  bounty,
+  onSubmit,
+  onClose,
+}: RatingModalProps) => {
   const [rating, setRating] = useState(0);
-  const [feedback, setFeedback] = useState('');
+  const [feedback, setFeedback] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
   const handleSubmit = async () => {
     if (rating < 1 || rating > 5) {
-      setError('Please select a rating between 1 and 5.');
+      setError("Please select a rating between 1 and 5.");
       return;
     }
     setLoading(true);
@@ -33,50 +51,79 @@ export const RatingModal: React.FC<RatingModalProps> = ({ contributor, bounty, o
       await onSubmit(rating, feedback);
       setSuccess(true);
     } catch (err) {
-      console.error(err)
-      setError('Failed to submit rating. Please try again.');
+      console.error(err);
+      setError("Failed to submit rating. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  if (success) {
-    return (
-      <div className="modal">
-        <h2>Success!</h2>
-        <p>Rating submitted. Contributor reputation updated.</p>
-        <button onClick={onClose}>Close</button>
-      </div>
-    );
-  }
-
   return (
-    <div className="modal">
-      <h2>Rate Contributor</h2>
-      <div>
-        <strong>Bounty:</strong> {bounty.title}
-      </div>
-      <div>
-        <strong>Contributor:</strong> {contributor.name}
-      </div>
-      <div>
-        <strong>Current Reputation:</strong> {contributor.reputation}
-      </div>
-      <div style={{ margin: '16px 0' }}>
-        <RatingStars value={rating} onChange={setRating} />
-      </div>
-      <textarea
-        placeholder="Optional feedback"
-        value={feedback}
-        onChange={e => setFeedback(e.target.value)}
-        rows={3}
-        style={{ width: '100%', marginBottom: 8 }}
-      />
-      {error && <div style={{ color: 'red', marginBottom: 8 }}>{error}</div>}
-      <button onClick={handleSubmit} disabled={loading}>
-        {loading ? 'Submitting...' : 'Submit'}
-      </button>
-      <button onClick={onClose} style={{ marginLeft: 8 }}>Cancel</button>
-    </div>
+    <Dialog open onOpenChange={(open: boolean) => !open && onClose()}>
+      <DialogContent>
+        {success ? (
+          <>
+            <DialogHeader>
+              <DialogTitle>Success!</DialogTitle>
+              <DialogDescription>
+                Rating submitted. Contributor reputation updated.
+              </DialogDescription>
+            </DialogHeader>
+
+            <DialogFooter>
+              <Button variant="ghost" onClick={onClose}>
+                Close
+              </Button>
+            </DialogFooter>
+          </>
+        ) : (
+          <>
+            <DialogHeader>
+              <DialogTitle>Rate Contributor</DialogTitle>
+              <DialogDescription>
+                Provide a rating and optional feedback for the contributor.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-2">
+              <div>
+                <strong>Bounty:</strong> {bounty.title}
+              </div>
+              <div>
+                <strong>Contributor:</strong> {contributor.name}
+              </div>
+              <div>
+                <strong>Current Reputation:</strong> {contributor.reputation}
+              </div>
+
+              <div className="mt-4">
+                <RatingStars value={rating} onChange={setRating} />
+              </div>
+
+              <Textarea
+                placeholder="Optional feedback"
+                value={feedback}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                  setFeedback(e.target.value)
+                }
+                rows={3}
+                className="min-h-[6rem]"
+              />
+
+              {error && <div className="text-destructive">{error}</div>}
+            </div>
+
+            <DialogFooter>
+              <Button variant="ghost" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button onClick={handleSubmit} disabled={loading}>
+                {loading ? "Submitting..." : "Submit"}
+              </Button>
+            </DialogFooter>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 };
