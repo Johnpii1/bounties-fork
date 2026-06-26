@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { authClient } from "@/lib/auth-client";
+import { useWalletAddress } from "@/hooks/use-wallet-address";
 import {
   useJoinCompetition,
   ContestError,
@@ -22,16 +22,9 @@ interface CompetitionJoinState {
 export function useCompetitionJoinState(
   bounty: BountyFieldsFragment & Partial<Bounty>,
 ): CompetitionJoinState {
-  const { data: session } = authClient.useSession();
+  const walletAddress = useWalletAddress();
   const joinMutation = useJoinCompetition();
   const [localJoined, setLocalJoined] = useState(false);
-
-  const walletAddress =
-    (session?.user as { walletAddress?: string; address?: string } | undefined)
-      ?.walletAddress ||
-    (session?.user as { walletAddress?: string; address?: string } | undefined)
-      ?.address ||
-    null;
 
   const deadline = bounty.bountyWindow?.endDate ?? null;
   const isPastDeadline = useDeadlinePassed(deadline);

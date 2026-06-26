@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
+import { useWalletAddress } from "@/hooks/use-wallet-address";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,12 +30,7 @@ export function FcfsApprovalPanel({ bounty }: { bounty: FcfsApprovalBounty }) {
   const [points, setPoints] = useState(10);
 
   const currentUserId = (session?.user as { id?: string } | undefined)?.id;
-  const walletAddress =
-    (session?.user as { walletAddress?: string; address?: string } | undefined)
-      ?.walletAddress ||
-    (session?.user as { walletAddress?: string; address?: string } | undefined)
-      ?.address ||
-    null;
+  const walletAddress = useWalletAddress();
 
   const isCreator = Boolean(
     currentUserId && currentUserId === bounty.createdBy,
