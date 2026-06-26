@@ -1,13 +1,12 @@
 import { renderHook } from "@testing-library/react";
 import { useWalletAddress } from "../use-wallet-address";
+import { authClient } from "@/lib/auth-client";
 
 jest.mock("@/lib/auth-client", () => ({
   authClient: {
     useSession: jest.fn(),
   },
 }));
-
-const { authClient } = require("@/lib/auth-client");
 
 describe("useWalletAddress", () => {
   it("returns null when there is no session", () => {
