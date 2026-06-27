@@ -54,6 +54,11 @@ type ApplicationContractClient = {
     applicant: string;
     bountyId: bigint;
   }) => Promise<{ txHash: string }>;
+  declineApplicant?: (params: {
+    bountyId: bigint;
+    applicant: string;
+    reason?: string;
+  }) => Promise<{ txHash: string }>;
 };
 
 // ---------------------------------------------------------------------------
@@ -114,6 +119,12 @@ export function useApplyToBounty() {
       applicantAddress: string;
       proposal: string;
     }) => {
+      if (!applicantAddress?.trim()) {
+        throw new ApplicationError(
+          "tx_failed",
+          "Wallet address is required to apply to a bounty.",
+        );
+      }
       const client = resolveApplicationClient();
       return client.apply({
         applicant: applicantAddress,
@@ -207,11 +218,25 @@ export function useDeclineApplicant() {
       applicantAddress: string;
       reason?: string;
     }) => {
+      const declinedAt = new Date().toISOString();
+      const reasonText = reason?.trim() || undefined;
+      const client = (
+        globalThis as { __applicationContracts?: ApplicationContractClient }
+      ).__applicationContracts;
+
+      if (client?.declineApplicant) {
+        await client.declineApplicant({
+          bountyId: toBountyIdBigInt(bountyId),
+          applicant: applicantAddress,
+          reason: reasonText,
+        });
+      }
+
       return {
         bountyId,
         applicantAddress,
-        reason: reason?.trim() || undefined,
-        declinedAt: new Date().toISOString(),
+        reason: reasonText,
+        declinedAt,
       };
     },
 
