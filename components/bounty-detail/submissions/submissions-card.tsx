@@ -93,6 +93,7 @@ export function BountyDetailSubmissionsCard({
       });
       clearDraft();
     } catch (err) {
+      // Replace with toast or error UI as needed
       console.error("Submit PR failed:", err);
     } finally {
       setPrUrl("");
@@ -110,6 +111,7 @@ export function BountyDetailSubmissionsCard({
         reviewComments: reviewComments.trim() || undefined,
       });
     } catch (err) {
+      // Replace with toast or error UI as needed
       console.error("Review submission failed:", err);
     } finally {
       setReviewDialogOpen(false);
@@ -126,6 +128,7 @@ export function BountyDetailSubmissionsCard({
         transactionHash: transactionHash.trim(),
       });
     } catch (err) {
+      // Replace with toast or error UI as needed
       console.error("Mark paid failed:", err);
     } finally {
       setTransactionHash("");
