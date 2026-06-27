@@ -83,7 +83,7 @@ export function BountySidebar({ bounty }: BountySidebarProps) {
 
   const handleMarkCompleted = async () => {
     if (!isSponsor) {
-      alert("Only maintainers can mark as completed.");
+      alert("Only sponsors can mark as completed.");
       return;
     }
     setLoading(true);
@@ -114,7 +114,7 @@ export function BountySidebar({ bounty }: BountySidebarProps) {
       return;
     }
     if (!isSponsor) {
-      alert("Only maintainers can rate contributors.");
+      alert("Only sponsors can rate contributors.");
       return;
     }
     if (!completed) {
