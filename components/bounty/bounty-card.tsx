@@ -13,18 +13,16 @@ import { Clock, Users, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { BountyFieldsFragment } from "@/lib/graphql/generated";
+import type { Bounty } from "@/types/bounty";
 import { EscrowStatus } from "./escrow-status";
 import { useEscrowPool } from "@/hooks/use-escrow";
 import { getRoundPhase } from "@/hooks/use-lightning-rounds";
 import { BookmarkButton } from "./bookmark-button";
 
-type CardBounty = BountyFieldsFragment & {
-  totalSlotsOccupied?: number | null;
-  maxSlots?: number | null;
-};
+type CardBounty = BountyFieldsFragment & Partial<Bounty>;
 
 interface BountyCardProps {
-  bounty: CardBounty;
+  bounty: BountyFieldsFragment;
   onClick?: () => void;
   variant?: "grid" | "list";
 }
@@ -97,6 +95,7 @@ export function BountyCard({
   const isFcfsClaimed =
     bounty.type === "FIXED_PRICE" && normalizedStatus === "IN_PROGRESS";
   const isCompetition = bounty.type === "COMPETITION";
+  const cardBounty = bounty as CardBounty;
   // claimCount and maxParticipants are pending backend schema fields; use safe fallbacks.
   const slotCount = bounty._count?.submissions ?? 0;
   const maxParticipants = null;
@@ -233,7 +232,8 @@ export function BountyCard({
             {bounty.type === "MULTI_WINNER_MILESTONE" && (
               <Badge className="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-xs px-2.5 py-1 flex items-center gap-1">
                 <Users className="size-3" />
-                {bounty.totalSlotsOccupied ?? 0} / {bounty.maxSlots ?? 5} slots
+                {cardBounty.totalSlotsOccupied ?? 0} /{" "}
+                {cardBounty.maxSlots ?? 5} slots
               </Badge>
             )}
           </div>
