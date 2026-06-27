@@ -18,6 +18,7 @@ import { RefundStatusTracker } from "../bounty/refund-status";
 import { FeeCalculator } from "../bounty/fee-calculator";
 import { useEscrowPool } from "@/hooks/use-escrow";
 import { authClient } from "@/lib/auth-client";
+import { useWalletAddress } from "@/hooks/use-wallet-address";
 import { useDeadlinePassed } from "@/hooks/use-deadline-passed";
 import type { CancellationRecord } from "@/types/escrow";
 import { MilestoneFunnel } from "@/components/bounty/milestone-funnel";
@@ -87,6 +88,8 @@ export function BountyDetailClient({ bountyId }: { bountyId: string }) {
   }, []);
 
   const pastDeadline = useDeadlinePassed(bounty?.bountyWindow?.endDate);
+  // walletAddress is required for contract actions. Do NOT fallback to user.id.
+  const walletAddress = useWalletAddress() ?? "";
 
   if (isPending) return <BountyDetailSkeleton />;
 
@@ -145,9 +148,6 @@ export function BountyDetailClient({ bountyId }: { bountyId: string }) {
   const isCreator =
     (session?.user as { id?: string } | undefined)?.id === bounty.createdBy;
   const isFinalized = bounty.status === "COMPLETED";
-  // walletAddress is required for contract actions. Do NOT fallback to user.id.
-  const walletAddress =
-    (session?.user as { walletAddress?: string })?.walletAddress || "";
 
   // Identify if the current user is the assigned contributor
   // using a fallback check on submissions or assumed backend field.

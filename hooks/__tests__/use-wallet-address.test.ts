@@ -10,19 +10,21 @@ jest.mock("@/lib/auth-client", () => ({
 
 describe("useWalletAddress", () => {
   it("returns null when there is no session", () => {
-    authClient.useSession.mockReturnValue({ data: null });
+    (authClient.useSession as jest.Mock).mockReturnValue({ data: null });
     const { result } = renderHook(() => useWalletAddress());
     expect(result.current).toBeNull();
   });
 
   it("returns null when session has no user", () => {
-    authClient.useSession.mockReturnValue({ data: { user: undefined } });
+    (authClient.useSession as jest.Mock).mockReturnValue({
+      data: { user: undefined },
+    });
     const { result } = renderHook(() => useWalletAddress());
     expect(result.current).toBeNull();
   });
 
   it("returns walletAddress when available", () => {
-    authClient.useSession.mockReturnValue({
+    (authClient.useSession as jest.Mock).mockReturnValue({
       data: { user: { walletAddress: "0xABC", address: "0xDEF" } },
     });
     const { result } = renderHook(() => useWalletAddress());
@@ -30,7 +32,7 @@ describe("useWalletAddress", () => {
   });
 
   it("falls back to address when walletAddress is missing", () => {
-    authClient.useSession.mockReturnValue({
+    (authClient.useSession as jest.Mock).mockReturnValue({
       data: { user: { address: "0xDEF" } },
     });
     const { result } = renderHook(() => useWalletAddress());
@@ -38,7 +40,7 @@ describe("useWalletAddress", () => {
   });
 
   it("returns null when neither walletAddress nor address exists", () => {
-    authClient.useSession.mockReturnValue({
+    (authClient.useSession as jest.Mock).mockReturnValue({
       data: { user: { name: "test" } },
     });
     const { result } = renderHook(() => useWalletAddress());
