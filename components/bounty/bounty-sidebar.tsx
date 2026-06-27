@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { RatingModal } from "../rating/rating-modal";
 import { useClaimBounty } from "@/hooks/use-bounty-mutations";
+import { useUserRole } from "@/hooks/use-user-role";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import type {
@@ -28,17 +29,8 @@ export function BountySidebar({ bounty }: BountySidebarProps) {
   const claimBounty = useClaimBounty();
   const [loading, setLoading] = useState(false);
 
-  // Mock maintainer check for now - in real app this comes from auth context
-  const IS_MAINTAINER = process.env.NEXT_PUBLIC_MOCK_MAINTAINER === "true";
-
-  if (
-    typeof window !== "undefined" &&
-    process.env.NEXT_PUBLIC_MOCK_MAINTAINER === "true"
-  ) {
-    console.warn(
-      "DEV: Mock maintainer enabled in components/bounty/bounty-sidebar.tsx — do NOT enable in production",
-    );
-  }
+  const role = useUserRole();
+  const isSponsor = role === "sponsor";
 
   const createdTimeAgo = useMemo(
     () => formatDistanceToNow(new Date(bounty.createdAt), { addSuffix: true }),
@@ -90,8 +82,8 @@ export function BountySidebar({ bounty }: BountySidebarProps) {
   } | null>(null);
 
   const handleMarkCompleted = async () => {
-    if (!IS_MAINTAINER) {
-      alert("Only maintainers can mark as completed.");
+    if (!isSponsor) {
+      alert("Only sponsors can mark as completed.");
       return;
     }
     setLoading(true);
@@ -121,8 +113,8 @@ export function BountySidebar({ bounty }: BountySidebarProps) {
       alert("You have already rated this contributor.");
       return;
     }
-    if (!IS_MAINTAINER) {
-      alert("Only maintainers can rate contributors.");
+    if (!isSponsor) {
+      alert("Only sponsors can rate contributors.");
       return;
     }
     if (!completed) {
@@ -142,7 +134,7 @@ export function BountySidebar({ bounty }: BountySidebarProps) {
   };
 
   const renderActionButton = () => {
-    if (bounty.status === "IN_PROGRESS" && IS_MAINTAINER && !completed) {
+    if (bounty.status === "IN_PROGRESS" && isSponsor && !completed) {
       return (
         <Button
           onClick={handleMarkCompleted}
@@ -205,7 +197,7 @@ export function BountySidebar({ bounty }: BountySidebarProps) {
       {lastRating && reputationGain && (
         <div className="p-4 mb-4 rounded bg-green-900/60 text-green-200 border border-green-700">
           <div className="mb-1">
-            {IS_MAINTAINER
+            {isSponsor
               ? "You rated the contributor:"
               : "Contributor was rated:"}{" "}
             <b>{lastRating} / 5</b> stars
@@ -260,3 +252,4 @@ export function BountySidebar({ bounty }: BountySidebarProps) {
     </div>
   );
 }
+
