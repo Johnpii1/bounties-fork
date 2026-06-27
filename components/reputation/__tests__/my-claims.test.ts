@@ -1,5 +1,4 @@
 import { CLAIM_SECTIONS, getClaimsBySection, normalizeStatus, type MyClaim } from "@/components/reputation/my-claims";
-import { describe, expect, it } from "@jest/globals";
 
 describe("My Claims helpers", () => {
     it("normalizes status values consistently", () => {
