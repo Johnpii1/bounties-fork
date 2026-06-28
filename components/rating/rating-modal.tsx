@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import type React from "react";
 import {
   Dialog,
   DialogContent,
@@ -86,14 +85,21 @@ export const RatingModal = ({
             </DialogHeader>
 
             <div className="space-y-2">
-              <div>
-                <strong>Bounty:</strong> {bounty.title}
+              <div className="flex items-center">
+                <span className="text-muted-foreground">Bounty:</span>
+                <span className="ml-2 font-medium">{bounty.title}</span>
               </div>
-              <div>
-                <strong>Contributor:</strong> {contributor.name}
+              <div className="flex items-center">
+                <span className="text-muted-foreground">Contributor:</span>
+                <span className="ml-2 font-medium">{contributor.name}</span>
               </div>
-              <div>
-                <strong>Current Reputation:</strong> {contributor.reputation}
+              <div className="flex items-center">
+                <span className="text-muted-foreground">
+                  Current Reputation:
+                </span>
+                <span className="ml-2 font-medium">
+                  {contributor.reputation}
+                </span>
               </div>
 
               <div className="mt-4">
@@ -103,9 +109,7 @@ export const RatingModal = ({
               <Textarea
                 placeholder="Optional feedback"
                 value={feedback}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                  setFeedback(e.target.value)
-                }
+                onChange={(e) => setFeedback(e.target.value)}
                 rows={3}
                 className="min-h-[6rem]"
               />
