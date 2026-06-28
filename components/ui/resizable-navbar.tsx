@@ -214,7 +214,7 @@ export const MobileNavMenu = ({
             type="button"
             aria-label="Close mobile menu"
             onClick={onClose}
-            className="ml-auto inline-flex h-9 w-9 items-center justify-center rounded-full text-black transition hover:bg-gray-100 dark:text-white dark:hover:bg-neutral-800"
+            className="self-end inline-flex h-9 w-9 items-center justify-center rounded-full text-black transition hover:bg-gray-100 dark:text-white dark:hover:bg-neutral-800"
           >
             <IconX className="h-4 w-4" />
           </button>
