@@ -12,6 +12,7 @@ import { useSmartWallet } from "@/components/providers/smart-wallet-provider";
 import { WalletInfo } from "@/types/wallet";
 import { CreditBalance } from "@/components/reputation/credit-balance";
 import { Button } from "@/components/ui/button";
+import { authClient } from "@/lib/auth-client";
 import { ModeToggle } from "./mode-toggle";
 import { SecureAccountStep } from "./onboarding/secure-account-step";
 import {
@@ -27,6 +28,8 @@ import { Wallet, LogIn, Fingerprint } from "lucide-react";
 
 export function GlobalNavbar() {
   const pathname = usePathname();
+  const { data: session } = authClient.useSession();
+  const userId = session?.user?.id;
   const userRole = useUserRole();
   const { walletInfo, isConnected, isRegistered, connect, isLoading } =
     useSmartWallet();
@@ -140,9 +143,8 @@ export function GlobalNavbar() {
         </div>
 
         <div className="flex items-center gap-3">
-          <NavRankBadge userId="user-1" className="hidden sm:flex" />
-          <CreditBalance userId="user-1" className="hidden sm:flex" />
-          {/* TODO: Replace with actual auth user ID */}
+          <NavRankBadge userId={userId} className="hidden sm:flex" />
+          <CreditBalance userId={userId} className="hidden sm:flex" />
 
           <NotificationCenter />
 

@@ -12,10 +12,14 @@ import {
   MobileNavMenu,
 } from "@/components/ui/resizable-navbar";
 import { NavRankBadge } from "@/components/leaderboard/nav-rank-badge";
+import { CreditBalance } from "@/components/reputation/credit-balance";
 import { SearchCommand } from "@/components/search-command";
 import { ModeToggle } from "@/components/mode-toggle";
+import { authClient } from "@/lib/auth-client";
 
 export default function GlobalResizableNavbar() {
+  const { data: session } = authClient.useSession();
+  const userId = session?.user?.id;
 
   const navItems = [
     { name: "Explore", link: "/bounty" },
@@ -37,7 +41,8 @@ export default function GlobalResizableNavbar() {
         <NavItems items={navItems} />
 
         <div className="flex items-center gap-2">
-          <NavRankBadge userId="user-1" className="hidden sm:flex" />
+          <NavRankBadge userId={userId} className="hidden sm:flex" />
+          <CreditBalance userId={userId} className="hidden sm:flex" />
           <SearchCommand />
           <ModeToggle />
         </div>
