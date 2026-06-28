@@ -1,4 +1,9 @@
-import { CLAIM_SECTIONS, getClaimsBySection, normalizeStatus, type MyClaim } from "@/components/reputation/my-claims";
+import {
+  CLAIM_SECTIONS,
+  getClaimsBySection,
+  normalizeStatus,
+  type MyClaim,
+} from "@/components/reputation/my-claims";
 
 describe("My Claims helpers", () => {
   it("normalizes status values consistently", () => {
