@@ -11,6 +11,7 @@ import {
 import { LeaderboardTimeframe } from "@/lib/graphql/generated";
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { authClient } from "@/lib/auth-client";
 import {
   TIMEFRAMES,
   TIERS,
@@ -45,9 +46,8 @@ export default function LeaderboardPage() {
     tags: initialTags || [],
   });
 
-  // Fake current user ID for demo purposes
-  // In a real app this would come from auth context
-  const currentUserId = "user-1";
+  const { data: session } = authClient.useSession();
+  const currentUserId = session?.user?.id;
 
   // Debounce filters to prevent rapid API calls/URL updates
   const [debouncedFilters, setDebouncedFilters] =

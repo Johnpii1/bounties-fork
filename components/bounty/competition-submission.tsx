@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Loader2, Lock, Send, Clock } from "lucide-react";
 import { toast } from "sonner";
-import { authClient } from "@/lib/auth-client";
+import { useWalletAddress } from "@/hooks/use-wallet-address";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -40,7 +40,7 @@ export function CompetitionSubmission({
   deadline,
   hasJoined,
 }: CompetitionSubmissionProps) {
-  const { data: session } = authClient.useSession();
+  const walletAddress = useWalletAddress();
   const [workCid, setWorkCid] = useState("");
   const submitMutation = useSubmitContestWork();
   const isPastDeadline = useDeadlinePassed(deadline);
@@ -54,13 +54,6 @@ export function CompetitionSubmission({
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, [deadline]);
-
-  const walletAddress =
-    (session?.user as { walletAddress?: string; address?: string } | undefined)
-      ?.walletAddress ||
-    (session?.user as { walletAddress?: string; address?: string } | undefined)
-      ?.address ||
-    null;
 
   if (!hasJoined) return null;
 

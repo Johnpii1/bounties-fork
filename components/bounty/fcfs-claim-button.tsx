@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Clock3, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
+import { useWalletAddress } from "@/hooks/use-wallet-address";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -73,12 +74,7 @@ export function FcfsClaimButton({ bounty }: { bounty: FcfsBounty }) {
   }, []);
 
   const currentUserId = (session?.user as { id?: string } | undefined)?.id;
-  const walletAddress =
-    (session?.user as { walletAddress?: string; address?: string } | undefined)
-      ?.walletAddress ||
-    (session?.user as { walletAddress?: string; address?: string } | undefined)
-      ?.address ||
-    null;
+  const walletAddress = useWalletAddress();
 
   const isFcfs = bounty.type === "FIXED_PRICE";
   const isOpen = bounty.status === "OPEN";

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Loader2, Trophy, Award, CheckCircle2, Lock } from "lucide-react";
 import { toast } from "sonner";
-import { authClient } from "@/lib/auth-client";
+import { useWalletAddress } from "@/hooks/use-wallet-address";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -45,7 +45,7 @@ export function CompetitionJudging({
   totalReward,
   currency,
 }: CompetitionJudgingProps) {
-  const { data: session } = authClient.useSession();
+  const walletAddress = useWalletAddress();
   const approveMutation = useApproveContestWinner();
   const finalizeMutation = useFinalizeContest();
 
@@ -54,13 +54,6 @@ export function CompetitionJudging({
   // Optimistic local set — augments backend status for immediate feedback.
   // On next query invalidation the backend status takes over.
   const [localApproved, setLocalApproved] = useState<Set<string>>(new Set());
-
-  const walletAddress =
-    (session?.user as { walletAddress?: string; address?: string } | undefined)
-      ?.walletAddress ||
-    (session?.user as { walletAddress?: string; address?: string } | undefined)
-      ?.address ||
-    null;
 
   const handleApprove = async (sub: Submission) => {
     if (!walletAddress) {
