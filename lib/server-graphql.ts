@@ -25,7 +25,7 @@ export async function graphqlRequest<T>(
   const response = await fetch(GRAPHQL_URL, {
     method: "POST",
     headers,
-    body: JSON.stringify({ query, variables }),
+    body: JSON.stringify({ query: queryString, variables }),
     // Don't cache - always get fresh data
     cache: "no-store",
   });
