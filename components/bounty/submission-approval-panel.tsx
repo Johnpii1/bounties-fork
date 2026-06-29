@@ -21,10 +21,8 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import {
-  useApproveApplicationSubmission,
-  useRequestRevisions,
-} from "@/hooks/use-bounty-application";
+import { useApproveApplicationSubmission } from "@/hooks/use-application-mutations";
+import { useRequestRevisions } from "@/hooks/use-application-review-mutations";
 import type { BountyFieldsFragment } from "@/lib/graphql/generated";
 import type { Bounty } from "@/types/bounty";
 

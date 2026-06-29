@@ -25,7 +25,7 @@ import {
 import { toast } from "sonner";
 
 import { DisputeReasonEnum } from "@/lib/graphql/generated";
-import { useRaiseDispute } from "@/hooks/use-bounty-application";
+import { useRaiseDispute } from "@/hooks/use-dispute-mutations";
 
 const DISPUTE_REASON_LABELS: Record<DisputeReasonEnum, string> = {
   [DisputeReasonEnum.MilestoneNotDelivered]: "Milestone Not Delivered",
@@ -51,7 +51,9 @@ export function RaiseDisputeDialog({
   const router = useRouter();
   const raiseDisputeMutation = useRaiseDispute();
 
-  const [disputeReason, setDisputeReason] = useState<DisputeReasonEnum | "">("");
+  const [disputeReason, setDisputeReason] = useState<DisputeReasonEnum | "">(
+    "",
+  );
   const [disputeDescription, setDisputeDescription] = useState("");
   const [disputeReasonError, setDisputeReasonError] = useState("");
   const [disputeDescriptionError, setDisputeDescriptionError] = useState("");
@@ -153,7 +155,10 @@ export function RaiseDisputeDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="dispute-description" className="text-sm font-medium">
+            <Label
+              htmlFor="dispute-description"
+              className="text-sm font-medium"
+            >
               Description <span className="text-red-400">*</span>
             </Label>
             <Textarea

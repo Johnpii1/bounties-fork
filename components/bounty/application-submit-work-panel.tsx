@@ -17,7 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useSubmitApplicationWork } from "@/hooks/use-bounty-application";
+import { useSubmitApplicationWork } from "@/hooks/use-application-mutations";
 
 interface ApplicationSubmitWorkPanelProps {
   bountyId: string;

@@ -23,11 +23,11 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import {
-  useReleasePayment,
   useAdvanceContributor,
+  useReleasePayment,
   useRemoveContributor,
   useSendMessage,
-} from "@/hooks/use-bounty-application";
+} from "@/hooks/use-milestone-mutations";
 import {
   ChevronRight,
   UserMinus,
