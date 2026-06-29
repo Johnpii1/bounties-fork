@@ -16,7 +16,12 @@
  */
 
 import { test, expect, type Page } from "@playwright/test";
-import { stubAuth, seedSessionCookie } from "./helpers/mocks";
+import {
+  makeSession,
+  stubAuth,
+  seedSessionCookie,
+  LEADERBOARD_STUBS,
+} from "./helpers/mocks";
 
 // Must be a valid UUID (all hex chars) so toBountyIdBigInt() in
 // use-competition-bounty.ts can parse it without throwing ContestError("tx_failed").
@@ -105,16 +110,11 @@ const MOCK_BOUNTY_FRAGMENT = {
 };
 
 // Session includes walletAddress so handleJoin() passes the wallet guard.
-const MOCK_SESSION = {
-  user: {
-    id: "user-e2e-tester",
-    name: "E2E Tester",
-    email: "e2e@test.com",
-    image: null,
-    walletAddress: "GCEZWKCA5VLDNRLN3RPRJMRZOX3Z6G5CHCGYWDOUALPIF5JD4PI21JQ",
-  },
-  session: { token: "fake-e2e-token" },
-};
+const MOCK_SESSION = makeSession(
+  "user-e2e-tester",
+  "E2E Tester",
+  "e2e@test.com",
+);
 
 type ContestContracts = {
   claimBounty: (args: {
@@ -165,65 +165,55 @@ export async function setupMocks(page: Page) {
       /* ignore */
     }
 
-    switch (body.operationName) {
-      case "Bounties":
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify({
-            data: {
-              bounties: {
-                bounties: [
-                  MOCK_BOUNTY_FRAGMENT,
-                  MOCK_MULTI_WINNER_BOUNTY_FRAGMENT,
-                ],
-                total: 2,
-                limit: 20,
-                offset: 0,
-              },
+    const op = body.operationName ?? "";
+
+    if (op === "Bounties") {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          data: {
+            bounties: {
+              bounties: [
+                MOCK_BOUNTY_FRAGMENT,
+                MOCK_MULTI_WINNER_BOUNTY_FRAGMENT,
+              ],
+              total: 2,
+              limit: 20,
+              offset: 0,
             },
-          }),
-        });
-        return;
-      case "Bounty": {
-        const requestedId = body.variables?.id;
-        const bountyData =
-          requestedId === BOUNTY_ID_MULTI
-            ? MOCK_MULTI_WINNER_BOUNTY_FRAGMENT
-            : MOCK_BOUNTY_FRAGMENT;
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify({
-            data: { bounty: { ...bountyData, submissions: [] } },
-          }),
-        });
-        return;
-      }
-      case "TopContributors":
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify({ data: { topContributors: [] } }),
-        });
-        return;
-      case "Leaderboard":
-      case "GetLeaderboardUser":
-      case "LeaderboardUser":
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify({
-            data: {
-              leaderboard: { contributors: [], total: 0, limit: 10, offset: 0 },
-              userLeaderboard: null,
-            },
-          }),
-        });
-        return;
-      default:
-        await route.abort("failed");
+          },
+        }),
+      });
+      return;
     }
+
+    if (op === "Bounty") {
+      const requestedId = body.variables?.id;
+      const bountyData =
+        requestedId === BOUNTY_ID_MULTI
+          ? MOCK_MULTI_WINNER_BOUNTY_FRAGMENT
+          : MOCK_BOUNTY_FRAGMENT;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          data: { bounty: { ...bountyData, submissions: [] } },
+        }),
+      });
+      return;
+    }
+
+    if (op in LEADERBOARD_STUBS) {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ data: LEADERBOARD_STUBS[op] }),
+      });
+      return;
+    }
+
+    await route.abort("failed");
   });
 
   await seedSessionCookie(page);

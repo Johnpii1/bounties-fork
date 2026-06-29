@@ -12,11 +12,22 @@ import type { Page } from "@playwright/test";
 export const WALLET_ADDRESS =
   "GCEZWKCA5VLDNRLN3RPRJMRZOX3Z6G5CHCGYWDOUALPIF5JD4PI21JQ";
 
+export interface MockSession {
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    image: string | null;
+    walletAddress: string;
+  };
+  session: { token: string };
+}
+
 export function makeSession(
   userId: string,
   name: string,
   email: string,
-): object {
+): MockSession {
   return {
     user: {
       id: userId,
