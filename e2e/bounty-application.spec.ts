@@ -16,11 +16,7 @@
  */
 
 import { test, expect, type Page } from "@playwright/test";
-import {
-  stubAuth,
-  seedSessionCookie,
-  LEADERBOARD_STUBS,
-} from "./helpers/mocks";
+import { stubAuth, seedSessionCookie } from "./helpers/mocks";
 
 // Must be a valid UUID (all hex chars) so toBountyIdBigInt() in
 // use-competition-bounty.ts can parse it without throwing ContestError("tx_failed").
