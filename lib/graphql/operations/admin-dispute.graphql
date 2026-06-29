@@ -28,7 +28,7 @@ mutation ResolveDispute($id: ID!, $input: AdminResolveDisputeDto!) {
 # Sent to the REST endpoint POST /disputes since the GraphQL schema does not
 # yet expose a raiseDispute mutation.  The operation is declared here for
 # documentation purposes and to keep all dispute-related operations in one
-# place; the actual network call is made in hooks/use-bounty-application.ts.
+# place; the actual network call is made in hooks/use-dispute-mutations.ts.
 #
 # Input fields:
 #   bountyId    – ID of the bounty being disputed

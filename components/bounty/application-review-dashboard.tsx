@@ -27,7 +27,7 @@ import { toast } from "sonner";
 import {
   useDeclineApplicant,
   useSelectApplicant,
-} from "@/hooks/use-bounty-application";
+} from "@/hooks/use-application-mutations";
 
 export interface Application {
   id: string;
