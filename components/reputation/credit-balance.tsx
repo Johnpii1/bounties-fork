@@ -12,12 +12,14 @@ import { cn } from "@/lib/utils";
 import { Zap } from "lucide-react";
 
 interface CreditBalanceProps {
-  userId: string;
+  userId?: string;
   className?: string;
 }
 
 export function CreditBalance({ userId, className }: CreditBalanceProps) {
   const { data, isLoading, isError } = useSparkCreditsBalance(userId);
+
+  if (!userId) return null;
 
   if (isLoading) {
     return <Skeleton className="h-6 w-14 rounded-full" />;

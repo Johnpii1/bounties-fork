@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { XCircle, Loader2, Users, Gavel } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,6 +23,7 @@ import {
   ApplicationDialog,
 } from "@/components/bounty/application-dialog";
 import { useBountyCTAState } from "./use-bounty-cta-state";
+import { RaiseDisputeDialog } from "./raise-dispute-dialog";
 
 type SidebarBounty = BountyFieldsFragment & Partial<Bounty>;
 
@@ -56,6 +58,8 @@ export function MobileCTA({ bounty, onCancelled }: MobileCTAProps) {
     isAlreadyJoined,
     applyForSlotButtonLabel,
   } = useBountyCTAState({ bounty, onCancelled });
+
+  const [disputeDialogOpen, setDisputeDialogOpen] = useState(false);
 
   return (
     <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-background/90 backdrop-blur-xl border-t border-gray-800/60 z-20">
@@ -179,17 +183,24 @@ export function MobileCTA({ bounty, onCancelled }: MobileCTAProps) {
         </div>
       )}
 
-      {/* Mobile Raise Dispute — coming soon */}
+      {/* Mobile Raise Dispute */}
       {canRaiseDispute && (
         <Button
           variant="ghost"
-          className="w-full mt-2 text-gray-400 text-xs h-8"
-          disabled
+          className="w-full mt-2 text-gray-400 hover:text-red-400 hover:bg-red-500/5 transition-all text-xs h-8"
+          onClick={() => setDisputeDialogOpen(true)}
         >
           <Gavel className="size-3 mr-2" />
-          Raise a Dispute (Coming Soon)
+          Raise a Dispute
         </Button>
       )}
+
+      {/* Mobile Raise Dispute Dialog */}
+      <RaiseDisputeDialog
+        open={disputeDialogOpen}
+        onOpenChange={setDisputeDialogOpen}
+        bountyId={bounty.id}
+      />
 
       {/* Mobile Cancel Dialog */}
       <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>

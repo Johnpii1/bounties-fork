@@ -75,9 +75,9 @@ export const Navbar = ({ children, className }: NavbarProps) => {
       {React.Children.map(children, (child) =>
         React.isValidElement(child)
           ? React.cloneElement(
-            child as React.ReactElement<{ visible?: boolean }>,
-            { visible },
-          )
+              child as React.ReactElement<{ visible?: boolean }>,
+              { visible },
+            )
           : child,
       )}
     </motion.div>
@@ -196,7 +196,6 @@ export const MobileNavMenu = ({
   children,
   className,
   isOpen,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onClose,
 }: MobileNavMenuProps) => {
   return (
@@ -211,6 +210,14 @@ export const MobileNavMenu = ({
             className,
           )}
         >
+          <button
+            type="button"
+            aria-label="Close mobile menu"
+            onClick={onClose}
+            className="self-end inline-flex h-9 w-9 items-center justify-center rounded-full text-black transition hover:bg-gray-100 dark:text-white dark:hover:bg-neutral-800"
+          >
+            <IconX className="h-4 w-4" />
+          </button>
           {children}
         </motion.div>
       )}
@@ -263,9 +270,9 @@ export const NavbarButton = ({
   className?: string;
   variant?: "primary" | "secondary" | "dark" | "gradient";
 } & (
-    | React.ComponentPropsWithoutRef<"a">
-    | React.ComponentPropsWithoutRef<"button">
-  )) => {
+  | React.ComponentPropsWithoutRef<"a">
+  | React.ComponentPropsWithoutRef<"button">
+)) => {
   const baseStyles =
     "px-4 py-2 rounded-md bg-white button bg-white text-black text-sm font-bold relative cursor-pointer hover:-translate-y-0.5 transition duration-200 inline-block text-center";
 
