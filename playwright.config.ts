@@ -9,7 +9,7 @@ export default defineConfig({
   reporter: process.env.CI ? "github" : "html",
   outputDir: "./test-results",
   use: {
-    baseURL: process.env.BASE_URL ?? "http://localhost:3000",
+    baseURL: "http://localhost:3000",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     navigationTimeout: 60_000,
@@ -22,12 +22,12 @@ export default defineConfig({
   ],
   webServer: {
     command: process.env.CI ? "pnpm start" : "pnpm run dev",
-    url: process.env.BASE_URL ?? "http://localhost:3000",
+    url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
     env: {
-      NEXT_PUBLIC_GRAPHQL_URL: `${process.env.BASE_URL ?? "http://localhost:3000"}/api/graphql`,
-      NEXT_PUBLIC_API_URL: process.env.BASE_URL ?? "http://localhost:3000",
+      NEXT_PUBLIC_GRAPHQL_URL: "http://localhost:3000/api/graphql",
+      NEXT_PUBLIC_API_URL: "http://localhost:3000",
     },
   },
 });

@@ -2,7 +2,8 @@
  * E2E: Raise Dispute Flow
  *
  * Covers the full Raise Dispute journey on a bounty detail page:
- *   1. Eligible user sees an active Raise Dispute button
+ *   1. Eligible users (creator / submitter) on IN_PROGRESS or UNDER_REVIEW bounties
+ *      see an active Raise Dispute button
  *   2. Clicking it opens the AlertDialog with reason Select and description Textarea
  *   3. Submitting with empty fields keeps dialog open and shows inline validation
  *   4. Valid submission closes dialog, shows success toast, redirects to /dispute/:id
@@ -10,123 +11,109 @@
  *
  * Stability strategy:
  *   - GraphQL intercepted via page.route() – hermetic, no live backend.
- *   - POST /api/disputes mocked via page.route().
- *   - Reuses MOCK_SESSION and setupMocks pattern from bounty-application.spec.ts.
- *   - Selectors use roles/labels/visible text only.
+ *   - POST /api/disputes mocked via page.route(); request contract (method + body)
+ *     is asserted on the success path.
+ *   - Reuses stubAuth / seedSessionCookie from e2e/helpers/mocks.ts.
+ *   - Selectors use roles and visible labels only.
  *   - Timing via await expect(...) – no arbitrary sleeps.
  */
 
 import { test, expect, type Page } from "@playwright/test";
+import {
+  makeSession,
+  stubAuth,
+  seedSessionCookie,
+  LEADERBOARD_STUBS,
+} from "./helpers/mocks";
 
 const BOUNTY_ID = "e2ec0bcd-dead-beef-cafe-ab01cd02ef06";
 const CREATOR_ID = "user-dispute-creator";
 const CONTRIBUTOR_ID = "user-dispute-contributor";
 const NEW_DISPUTE_ID = "dispute-abc-123";
-const WALLET_ADDRESS =
-  "GCEZWKCA5VLDNRLN3RPRJMRZOX3Z6G5CHCGYWDOUALPIF5JD4PI21JQ";
 
-// Bounty in IN_PROGRESS with one submission by the contributor
-const MOCK_BOUNTY = {
-  __typename: "Bounty",
-  id: BOUNTY_ID,
-  title: "Implement ZKP Dispute Test Bounty",
-  description: "A bounty used for dispute e2e tests.",
-  status: "IN_PROGRESS",
-  type: "MILESTONE_BASED",
-  rewardAmount: 500,
-  rewardCurrency: "XLM",
-  createdAt: "2025-01-10T09:00:00Z",
-  updatedAt: "2025-01-24T14:20:00Z",
-  organizationId: "org-test",
-  projectId: null,
-  bountyWindowId: null,
-  githubIssueUrl: "https://github.com/test/repo/issues/99",
-  githubIssueNumber: 99,
-  createdBy: CREATOR_ID,
-  organization: {
-    __typename: "BountyOrganization",
-    id: "org-test",
-    name: "Test Org",
-    logo: null,
-    slug: "test-org",
-  },
-  project: null,
-  bountyWindow: null,
-  _count: { __typename: "BountyCount", submissions: 1 },
-  submissions: [
-    {
-      __typename: "BountySubmissionType",
-      id: "sub-dispute-001",
-      bountyId: BOUNTY_ID,
-      submittedBy: CONTRIBUTOR_ID,
-      githubPullRequestUrl: "https://github.com/test/repo/pull/10",
-      status: "PENDING",
-      reviewComments: null,
-      reviewedAt: null,
-      reviewedBy: null,
-      paidAt: null,
-      rewardTransactionHash: null,
-      createdAt: "2025-01-20T10:00:00Z",
-      updatedAt: "2025-01-20T10:00:00Z",
-      submittedByUser: {
-        __typename: "BountySubmissionUser",
-        id: CONTRIBUTOR_ID,
-        name: "Test Contributor",
-        image: null,
-      },
-      reviewedByUser: null,
-    },
-  ],
-  milestones: [{ id: "m1", title: "Milestone 1", isCompleted: false }],
-  contributorProgress: null,
-  maxSlots: null,
-  totalSlotsOccupied: null,
-};
-
-function makeMockSession(userId: string) {
+function makeBounty(status: "IN_PROGRESS" | "UNDER_REVIEW") {
   return {
-    user: {
-      id: userId,
-      name: userId === CREATOR_ID ? "Test Creator" : "Test Contributor",
-      email: `${userId}@test.com`,
-      image: null,
-      walletAddress: WALLET_ADDRESS,
+    __typename: "Bounty",
+    id: BOUNTY_ID,
+    title: "Implement ZKP Dispute Test Bounty",
+    description: "A bounty used for dispute e2e tests.",
+    status,
+    type: "MILESTONE_BASED",
+    rewardAmount: 500,
+    rewardCurrency: "XLM",
+    createdAt: "2025-01-10T09:00:00Z",
+    updatedAt: "2025-01-24T14:20:00Z",
+    organizationId: "org-test",
+    projectId: null,
+    bountyWindowId: null,
+    githubIssueUrl: "https://github.com/test/repo/issues/99",
+    githubIssueNumber: 99,
+    createdBy: CREATOR_ID,
+    organization: {
+      __typename: "BountyOrganization",
+      id: "org-test",
+      name: "Test Org",
+      logo: null,
+      slug: "test-org",
     },
-    session: { token: "fake-e2e-token" },
+    project: null,
+    bountyWindow: null,
+    _count: { __typename: "BountyCount", submissions: 1 },
+    submissions: [
+      {
+        __typename: "BountySubmissionType",
+        id: "sub-dispute-001",
+        bountyId: BOUNTY_ID,
+        submittedBy: CONTRIBUTOR_ID,
+        githubPullRequestUrl: "https://github.com/test/repo/pull/10",
+        status: "PENDING",
+        reviewComments: null,
+        reviewedAt: null,
+        reviewedBy: null,
+        paidAt: null,
+        rewardTransactionHash: null,
+        createdAt: "2025-01-20T10:00:00Z",
+        updatedAt: "2025-01-20T10:00:00Z",
+        submittedByUser: {
+          __typename: "BountySubmissionUser",
+          id: CONTRIBUTOR_ID,
+          name: "Test Contributor",
+          image: null,
+        },
+        reviewedByUser: null,
+      },
+    ],
+    milestones: [{ id: "m1", title: "Milestone 1", isCompleted: false }],
+    contributorProgress: null,
+    maxSlots: null,
+    totalSlotsOccupied: null,
   };
 }
+
+const MOCK_BOUNTY = makeBounty("IN_PROGRESS");
+const MOCK_BOUNTY_UNDER_REVIEW = makeBounty("UNDER_REVIEW");
+
+type DisputeHandler = (
+  route: Parameters<Parameters<Page["route"]>[1]>[0],
+) => Promise<void>;
 
 async function setupMocks(
   page: Page,
   options: {
     userId: string;
-    bountyData?: typeof MOCK_BOUNTY;
-    disputeHandler?: (
-      route: Parameters<Parameters<Page["route"]>[1]>[0],
-    ) => Promise<void>;
+    bountyData?: ReturnType<typeof makeBounty>;
+    disputeHandler?: DisputeHandler;
   },
 ) {
   const { userId, bountyData = MOCK_BOUNTY, disputeHandler } = options;
 
-  await page.route("**/api/auth/**", async (route) => {
-    const url = new URL(route.request().url());
-    if (
-      url.pathname.endsWith("/get-session") ||
-      url.pathname.endsWith("/session")
-    ) {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(makeMockSession(userId)),
-      });
-    } else {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: "{}",
-      });
-    }
-  });
+  const session = makeSession(
+    userId,
+    userId === CREATOR_ID ? "Test Creator" : "Test Contributor",
+    `${userId}@test.com`,
+  );
+
+  await stubAuth(page, session);
 
   await page.route("**/api/graphql", async (route) => {
     let body: { operationName?: string } = {};
@@ -137,31 +124,26 @@ async function setupMocks(
     } catch {
       /* ignore */
     }
-
-    switch (body.operationName) {
-      case "Bounty":
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify({ data: { bounty: bountyData } }),
-        });
-        return;
-      case "TopContributors":
-      case "Leaderboard":
-      case "GetLeaderboardUser":
-      case "LeaderboardUser":
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify({ data: {} }),
-        });
-        return;
-      default:
-        await route.abort("failed");
+    const op = body.operationName ?? "";
+    if (op in LEADERBOARD_STUBS) {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ data: LEADERBOARD_STUBS[op] }),
+      });
+      return;
     }
+    if (op === "Bounty") {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ data: { bounty: bountyData } }),
+      });
+      return;
+    }
+    await route.abort("failed");
   });
 
-  // Default: successful dispute creation
   await page.route("**/api/disputes", async (route) => {
     if (disputeHandler) {
       await disputeHandler(route);
@@ -174,17 +156,7 @@ async function setupMocks(
     }
   });
 
-  await page.context().addCookies([
-    {
-      name: "boundless_auth.session_token",
-      value: "fake-e2e-token",
-      domain: "localhost",
-      path: "/",
-      httpOnly: false,
-      secure: false,
-      sameSite: "Lax",
-    },
-  ]);
+  await seedSessionCookie(page);
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -200,7 +172,7 @@ async function openDisputeDialog(page: Page) {
 // ── Tests ──────────────────────────────────────────────────────────────────
 
 test.describe("Raise Dispute flow", () => {
-  // ── 1. Eligible user sees the Raise Dispute button ──────────────────────
+  // ── 1. Button visibility: IN_PROGRESS ────────────────────────────────────
 
   test("creator on IN_PROGRESS bounty sees an active Raise Dispute button", async ({
     page,
@@ -222,7 +194,35 @@ test.describe("Raise Dispute flow", () => {
     await expect(btn).toBeEnabled();
   });
 
-  // ── 2. Dialog opens with correct form elements ──────────────────────────
+  // ── 2. Button visibility: UNDER_REVIEW ───────────────────────────────────
+
+  test("creator on UNDER_REVIEW bounty sees an active Raise Dispute button", async ({
+    page,
+  }) => {
+    await setupMocks(page, {
+      userId: CREATOR_ID,
+      bountyData: MOCK_BOUNTY_UNDER_REVIEW,
+    });
+    await page.goto(`/bounty/${BOUNTY_ID}`);
+    const btn = page.getByRole("button", { name: /Raise a Dispute/i });
+    await expect(btn).toBeVisible({ timeout: 10_000 });
+    await expect(btn).toBeEnabled();
+  });
+
+  test("participant (submitter) on UNDER_REVIEW bounty sees an active Raise Dispute button", async ({
+    page,
+  }) => {
+    await setupMocks(page, {
+      userId: CONTRIBUTOR_ID,
+      bountyData: MOCK_BOUNTY_UNDER_REVIEW,
+    });
+    await page.goto(`/bounty/${BOUNTY_ID}`);
+    const btn = page.getByRole("button", { name: /Raise a Dispute/i });
+    await expect(btn).toBeVisible({ timeout: 10_000 });
+    await expect(btn).toBeEnabled();
+  });
+
+  // ── 3. Dialog opens with correct form elements ──────────────────────────
 
   test("clicking Raise Dispute opens the AlertDialog with Select and Textarea", async ({
     page,
@@ -242,7 +242,7 @@ test.describe("Raise Dispute flow", () => {
     await expect(page.getByRole("button", { name: /Cancel/i })).toBeVisible();
   });
 
-  // ── 3. Validation: empty fields keep dialog open ────────────────────────
+  // ── 4. Validation: empty fields keep dialog open ────────────────────────
 
   test("submitting with empty reason and empty description shows inline validation errors", async ({
     page,
@@ -257,7 +257,6 @@ test.describe("Raise Dispute flow", () => {
       timeout: 5_000,
     });
     await expect(page.getByText(/Please describe the dispute/i)).toBeVisible();
-    // Dialog must stay open
     await expect(page.getByRole("alertdialog")).toBeVisible();
   });
 
@@ -268,7 +267,6 @@ test.describe("Raise Dispute flow", () => {
     await page.goto(`/bounty/${BOUNTY_ID}`);
     await openDisputeDialog(page);
 
-    // Pick any reason from the Select
     await page.getByRole("combobox").click();
     await page.getByRole("option").first().click();
 
@@ -280,25 +278,51 @@ test.describe("Raise Dispute flow", () => {
     await expect(page.getByRole("alertdialog")).toBeVisible();
   });
 
-  // ── 4. Successful submission ────────────────────────────────────────────
+  // ── 5. Successful submission ────────────────────────────────────────────
 
-  test("valid submission closes dialog, shows success toast, and redirects to /dispute/:id", async ({
+  test("valid submission sends correct POST body, closes dialog, shows success toast, and redirects to /dispute/:id", async ({
     page,
   }) => {
-    await setupMocks(page, { userId: CREATOR_ID });
+    const capturedRequests: { method: string; body: unknown }[] = [];
+
+    await setupMocks(page, {
+      userId: CREATOR_ID,
+      disputeHandler: async (route) => {
+        capturedRequests.push({
+          method: route.request().method(),
+          body: JSON.parse(route.request().postData() ?? "{}") as unknown,
+        });
+        await route.fulfill({
+          status: 201,
+          contentType: "application/json",
+          body: JSON.stringify({ id: NEW_DISPUTE_ID, campaignId: BOUNTY_ID }),
+        });
+      },
+    });
+
     await page.goto(`/bounty/${BOUNTY_ID}`);
     await openDisputeDialog(page);
 
-    // Select a reason
     await page.getByRole("combobox").click();
     await page.getByRole("option").first().click();
-
-    // Fill description
     await page
       .getByLabel(/Description/i)
       .fill("The milestone was not delivered on time.");
 
     await page.getByRole("button", { name: /Submit Dispute/i }).click();
+
+    // Assert request contract: method must be POST and body must include the
+    // three required fields.
+    await expect
+      .poll(() => capturedRequests.length, { timeout: 10_000 })
+      .toBeGreaterThan(0);
+    const req = capturedRequests[0]!;
+    expect(req.method).toBe("POST");
+    expect(req.body).toMatchObject({
+      campaignId: BOUNTY_ID,
+      reason: expect.any(String),
+      description: expect.any(String),
+    });
 
     // Dialog closes
     await expect(page.getByRole("alertdialog")).not.toBeVisible({
@@ -316,7 +340,7 @@ test.describe("Raise Dispute flow", () => {
     });
   });
 
-  // ── 5. API failure keeps dialog open and shows error toast ───────────────
+  // ── 6. API failure keeps dialog open and shows error toast ───────────────
 
   test("API 500 keeps dialog open and shows error toast", async ({ page }) => {
     await setupMocks(page, {
@@ -332,23 +356,17 @@ test.describe("Raise Dispute flow", () => {
     await page.goto(`/bounty/${BOUNTY_ID}`);
     await openDisputeDialog(page);
 
-    // Select a reason
     await page.getByRole("combobox").click();
     await page.getByRole("option").first().click();
-
-    // Fill description
     await page
       .getByLabel(/Description/i)
       .fill("Something went wrong on your side.");
 
     await page.getByRole("button", { name: /Submit Dispute/i }).click();
 
-    // Error toast
     await expect(page.getByText(/Failed to file dispute/i)).toBeVisible({
       timeout: 10_000,
     });
-
-    // Dialog must remain open
     await expect(page.getByRole("alertdialog")).toBeVisible();
   });
 });

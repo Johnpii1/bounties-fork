@@ -16,6 +16,11 @@
  */
 
 import { test, expect, type Page } from "@playwright/test";
+import {
+  stubAuth,
+  seedSessionCookie,
+  LEADERBOARD_STUBS,
+} from "./helpers/mocks";
 
 // Must be a valid UUID (all hex chars) so toBountyIdBigInt() in
 // use-competition-bounty.ts can parse it without throwing ContestError("tx_failed").
@@ -122,7 +127,7 @@ type ContestContracts = {
   }) => Promise<{ txHash: string }>;
 };
 
-async function setupMocks(page: Page) {
+export async function setupMocks(page: Page) {
   // Inject successful contract client by default
   await page.addInitScript(() => {
     (globalThis as { __claimBountyCalls?: number }).__claimBountyCalls = 0;
@@ -148,27 +153,7 @@ async function setupMocks(page: Page) {
     };
   });
 
-  await page.route("**/api/auth/**", async (route) => {
-    const url = new URL(route.request().url());
-    // better-auth's getSession endpoint is `/api/auth/get-session` — match
-    // both shapes so the session mock catches it.
-    if (
-      url.pathname.endsWith("/get-session") ||
-      url.pathname.endsWith("/session")
-    ) {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(MOCK_SESSION),
-      });
-    } else {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: "{}",
-      });
-    }
-  });
+  await stubAuth(page, MOCK_SESSION);
 
   await page.route("**/api/graphql", async (route) => {
     let body: {
@@ -245,17 +230,7 @@ async function setupMocks(page: Page) {
     }
   });
 
-  await page.context().addCookies([
-    {
-      name: "boundless_auth.session_token",
-      value: "fake-e2e-token",
-      domain: "localhost",
-      path: "/",
-      httpOnly: false,
-      secure: false,
-      sameSite: "Lax",
-    },
-  ]);
+  await seedSessionCookie(page);
 }
 
 test.describe("Bounty application flow", () => {
