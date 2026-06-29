@@ -5,11 +5,9 @@ import {
   Github,
   Copy,
   Check,
-  AlertCircle,
   XCircle,
   Loader2,
   Users,
-  Clock,
   Gavel,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -28,16 +26,45 @@ import {
 
 import { BountyFieldsFragment } from "@/lib/graphql/generated";
 import { StatusBadge, TypeBadge } from "./bounty-badges";
-import { FcfsClaimButton } from "@/components/bounty/fcfs-claim-button";
 import { CompetitionSubmission } from "@/components/bounty/competition-submission";
 import { CompetitionStatus } from "@/components/bounty/competition-status";
 import type { CancellationRecord } from "@/types/escrow";
 import type { Bounty } from "@/types/bounty";
-import { ApplicationDialog } from "@/components/bounty/application-dialog";
 import { useBountyCTAState } from "./use-bounty-cta-state";
 import { RaiseDisputeDialog } from "./raise-dispute-dialog";
 
+import { FcfsCta } from "./cta/fcfs-cta";
+import { CompetitionCta } from "./cta/competition-cta";
+import { MultiWinnerCta } from "./cta/multi-winner-cta";
+import { MilestoneBasedCta } from "./cta/milestone-based-cta";
+import { DefaultCta } from "./cta/default-cta";
+
 type SidebarBounty = BountyFieldsFragment & Partial<Bounty>;
+
+interface BountyCtaProps {
+  bounty: SidebarBounty;
+  state: ReturnType<typeof useBountyCTAState>;
+}
+
+function BountyCta({ bounty, state }: BountyCtaProps) {
+  if (state.isFcfs) {
+    return <FcfsCta bounty={bounty} state={state} />;
+  }
+  if (state.isCompetition) {
+    return <CompetitionCta bounty={bounty} state={state} />;
+  }
+  if (
+    bounty.type === "MULTI_WINNER_MILESTONE" &&
+    state.canAct &&
+    !state.isCreator
+  ) {
+    return <MultiWinnerCta bounty={bounty} state={state} />;
+  }
+  if (bounty.type === "MILESTONE_BASED" && state.canAct && !state.isCreator) {
+    return <MilestoneBasedCta bounty={bounty} state={state} />;
+  }
+  return <DefaultCta bounty={bounty} state={state} />;
+}
 
 interface SidebarCTAProps {
   bounty: SidebarBounty;
@@ -47,13 +74,9 @@ interface SidebarCTAProps {
 export function SidebarCTA({ bounty, onCancelled }: SidebarCTAProps) {
   const [disputeDialogOpen, setDisputeDialogOpen] = useState(false);
 
+  const state = useBountyCTAState({ bounty, onCancelled });
   const {
-    walletAddress,
     hasJoined,
-    isPastDeadline,
-    joinMutation,
-    handleJoin,
-    handleApply,
     copied,
     handleCopy,
     cancelDialogOpen,
@@ -62,8 +85,6 @@ export function SidebarCTA({ bounty, onCancelled }: SidebarCTAProps) {
     setCancelReason,
     isCancelling,
     handleCancel,
-    canAct,
-    isFcfs,
     isCompetition,
     canRaiseDispute,
     canCancel,
@@ -72,14 +93,7 @@ export function SidebarCTA({ bounty, onCancelled }: SidebarCTAProps) {
     deadline,
     isFinalized,
     submissionCount,
-    ctaLabel,
-    isCreator,
-    applyForSlotMutation,
-    handleApplyForSlot,
-    isSlotsFull,
-    isAlreadyJoined,
-    applyForSlotButtonLabel,
-  } = useBountyCTAState({ bounty, onCancelled });
+  } = state;
 
   return (
     <div className="space-y-4">
@@ -149,102 +163,7 @@ export function SidebarCTA({ bounty, onCancelled }: SidebarCTAProps) {
         {isCompetition && <Separator className="bg-gray-800/60" />}
 
         {/* CTA */}
-        {isFcfs ? (
-          <FcfsClaimButton bounty={bounty} />
-        ) : isCompetition ? (
-          hasJoined ? (
-            <Button
-              className="w-full h-11 font-bold tracking-wide"
-              disabled
-              size="lg"
-            >
-              Joined ✓
-            </Button>
-          ) : (
-            <Button
-              data-testid="apply-to-bounty-btn"
-              className="w-full h-11 font-bold tracking-wide"
-              disabled={
-                !canAct ||
-                isPastDeadline ||
-                joinMutation.isPending ||
-                !walletAddress
-              }
-              size="lg"
-              onClick={() => void handleJoin()}
-            >
-              {joinMutation.isPending ? (
-                <Loader2 className="mr-2 size-4 animate-spin" />
-              ) : (
-                <Users className="mr-2 size-4" />
-              )}
-              {canAct && !isPastDeadline ? "Join Competition" : ctaLabel()}
-            </Button>
-          )
-        ) : bounty.type === "MULTI_WINNER_MILESTONE" && canAct && !isCreator ? (
-          <Button
-            className="w-full h-11 font-bold tracking-wide"
-            disabled={
-              isSlotsFull ||
-              isAlreadyJoined ||
-              !walletAddress ||
-              applyForSlotMutation.isPending
-            }
-            size="lg"
-            onClick={() => void handleApplyForSlot()}
-          >
-            {applyForSlotMutation.isPending ? (
-              <Loader2 className="mr-2 size-4 animate-spin" />
-            ) : (
-              <Users className="mr-2 size-4" />
-            )}
-            {applyForSlotButtonLabel}
-          </Button>
-        ) : bounty.type === "MILESTONE_BASED" && canAct && !isCreator ? (
-          <ApplicationDialog
-            bountyTitle={bounty.title}
-            onApply={handleApply}
-            trigger={
-              <Button
-                className="w-full h-11 font-bold tracking-wide"
-                size="lg"
-                disabled={!walletAddress}
-              >
-                Apply for Bounty
-              </Button>
-            }
-          />
-        ) : (
-          <Button
-            className="w-full h-11 font-bold tracking-wide"
-            disabled={!canAct}
-            size="lg"
-            onClick={() =>
-              canAct &&
-              window.open(
-                bounty.githubIssueUrl,
-                "_blank",
-                "noopener,noreferrer",
-              )
-            }
-          >
-            {ctaLabel()}
-          </Button>
-        )}
-
-        {/* Helper text when locked out */}
-        {isCompetition && !hasJoined && isPastDeadline && (
-          <p className="flex items-center gap-1.5 text-xs text-gray-500 justify-center text-center">
-            <Clock className="size-3 shrink-0" />
-            Submission deadline has passed.
-          </p>
-        )}
-        {!canAct && !isCompetition && (
-          <p className="flex items-center gap-1.5 text-xs text-gray-500 justify-center text-center">
-            <AlertCircle className="size-3 shrink-0" />
-            This bounty is no longer accepting new submissions.
-          </p>
-        )}
+        <BountyCta bounty={bounty} state={state} />
 
         {/* Raise Dispute */}
         {canRaiseDispute && (
