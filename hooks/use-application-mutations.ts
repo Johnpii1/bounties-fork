@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { bountyKeys } from "@/lib/query/query-keys";
 import { type BountyQuery } from "@/lib/graphql/generated";
 import {
+  ApplicationError,
   resolveApplicationClient,
   toBountyIdBigInt,
 } from "./use-application-contracts";
@@ -36,6 +37,12 @@ export function useApplyToBounty() {
       applicantAddress: string;
       proposal: string;
     }) => {
+      if (!applicantAddress?.trim()) {
+        throw new ApplicationError(
+          "tx_failed",
+          "Wallet address is required to apply to a bounty.",
+        );
+      }
       const client = resolveApplicationClient();
       return client.apply({
         applicant: applicantAddress,
